@@ -1,0 +1,9 @@
+node_modules/
+dist/
+print/
+*.log
+.DS_Store
+Thumbs.db
+__pycache__/
+.vscode/
+.idea/

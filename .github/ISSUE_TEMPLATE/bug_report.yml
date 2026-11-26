@@ -1,0 +1,38 @@
+name: Bug report
+description: Something in the generator or a printed part is wrong
+labels: [bug]
+body:
+  - type: input
+    id: part
+    attributes:
+      label: Part name or link
+      description: The name shown in the generator (e.g. AESS-HOP-2x3x7-STD), or use "Copy link to this part".
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where is the problem?
+      options:
+        - Web generator (preview, buttons, downloads)
+        - Exported file (won't slice, wrong size, broken mesh)
+        - Printed part (fit, snap, strength)
+        - SolidCraft master / Python generator
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: print
+    attributes:
+      label: Printer and settings (for printed-part issues)
+      placeholder: Bambu A1, PLA, 0.2 mm layers, 3 walls, snap fit Standard…
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS (for generator issues)

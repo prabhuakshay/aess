@@ -1,0 +1,22 @@
+# AESS starter set: <type> <nx> <ny> [nh] [wall]
+# nh = height units of 7 mm (H = nh*7 + 4.3 mm). Lids ignore nh.
+
+# fit test (print these first: ~15 g)
+box    1 1 3
+lid    1 1
+
+# pick bins for screws, nuts and anchors
+hopper 1 2 7
+hopper 2 2 7
+hopper 2 3 7
+hopper 2 3 10 heavy
+
+# closed boxes with lids
+box    2 2 5
+box    2 3 7
+lid    2 2
+lid    2 3
+
+# long parts (long bolts, hinges, threaded rod)
+box    1 5 4
+lid    1 5

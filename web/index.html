@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AESS Bin Generator</title>
+  <meta name="theme-color" content="#d97706">
+  <meta property="og:title" content="AESS Bin Generator">
+  <meta property="og:description" content="Snap-stacking 3D-printable bins on a 42 mm grid. Pick a size, download a 3MF, print.">
+  <meta name="description" content="Generate snap-stacking 3D-printable storage bins on a 42 mm grid. Hoppers, boxes and lids, ready for your slicer.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./">
+      <img src="favicon.svg" alt="" width="28" height="28">
+      <span><strong>AESS</strong> Bin Generator</span>
+    </a>
+    <nav class="topnav">
+      <button class="linkbtn" id="aboutBtn" type="button">The standard</button>
+      <a class="linkbtn" id="repoLink" href="#" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="viewer" aria-label="3D preview">
+      <canvas id="view"></canvas>
+      <div class="viewer-hud">
+        <div class="hud-name" id="hudName">AESS-HOP-2x3x7-STD</div>
+        <div class="hud-dims" id="hudDims">83.5 × 125.5 × 53.3 mm</div>
+      </div>
+      <div class="viewer-tools">
+        <label class="toggle"><input type="checkbox" id="stackToggle"> <span>Show stacked ×3</span></label>
+        <button class="iconbtn" id="resetView" type="button" title="Reset view" aria-label="Reset view">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="viewer-status" id="status" hidden>Loading geometry engine…</div>
+    </section>
+
+    <aside class="panel">
+      <div class="group">
+        <div class="group-title">Part</div>
+        <div class="typecards" role="radiogroup" aria-label="Part type">
+          <button class="typecard" data-type="hopper" role="radio">
+            <svg viewBox="0 0 48 40"><path d="M6 8v26h36V8M6 8l6 0M36 8h6M12 8v8h24V8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M12 22h24" stroke="currentColor" stroke-width="2" opacity=".35"/></svg>
+            <span class="tc-name">Hopper</span><span class="tc-sub">open front, pick bin</span>
+          </button>
+          <button class="typecard" data-type="box" role="radio">
+            <svg viewBox="0 0 48 40"><path d="M6 6v28h36V6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M6 6h36" stroke="currentColor" stroke-width="2" opacity=".35"/></svg>
+            <span class="tc-name">Box</span><span class="tc-sub">closed, takes a lid</span>
+          </button>
+          <button class="typecard" data-type="lid" role="radio">
+            <svg viewBox="0 0 48 40"><path d="M6 18v10h36V18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M9 28v4h30v-4" fill="none" stroke="currentColor" stroke-width="2" opacity=".5"/></svg>
+            <span class="tc-name">Lid</span><span class="tc-sub">snaps on, stackable</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Footprint <span class="muted" id="fpReadout">2 × 3 · 83.5 × 125.5 mm</span></div>
+        <div class="fp-wrap">
+          <div class="fp-grid" id="fpGrid" aria-label="Pick a footprint in 42 mm grid units"></div>
+          <div class="fp-steppers">
+            <label>Width <span class="stepper"><button type="button" data-step="nx:-1" aria-label="Narrower">−</button><output id="nxOut">2</output><button type="button" data-step="nx:1" aria-label="Wider">+</button></span></label>
+            <label>Depth <span class="stepper"><button type="button" data-step="ny:-1" aria-label="Shallower">−</button><output id="nyOut">3</output><button type="button" data-step="ny:1" aria-label="Deeper">+</button></span></label>
+            <p class="hint">1 unit = 42 mm. Click a cell to set width × depth.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="group" id="heightGroup">
+        <div class="group-title">Height <span class="muted" id="hReadout">7 units · 53.3 mm</span></div>
+        <input type="range" id="nh" min="1" max="35" step="1" value="7" aria-label="Height in 7 mm units">
+        <div class="chips" id="hChips"></div>
+        <p class="hint">Each unit is 7 mm of stack height. A 3-unit bin on a 4-unit bin stands exactly as tall as one 7-unit bin.</p>
+      </div>
+
+      <div class="group" id="frontGroup">
+        <div class="group-title">Front lip <span class="muted" id="frontReadout">40% · 21.3 mm</span></div>
+        <input type="range" id="front" min="15" max="90" step="5" value="40" aria-label="Hopper front lip height">
+      </div>
+
+      <div class="group">
+        <div class="group-title">Wall</div>
+        <div class="seg" id="wallSeg" role="radiogroup" aria-label="Wall thickness">
+          <button data-wall="lite" role="radio"><b>Lite</b><small>0.8 mm</small></button>
+          <button data-wall="std" role="radio"><b>Standard</b><small>1.2 mm</small></button>
+          <button data-wall="heavy" role="radio"><b>Heavy</b><small>1.4 mm</small></button>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-title">Snap fit</div>
+        <div class="seg" id="fitSeg" role="radiogroup" aria-label="Snap fit">
+          <button data-fit="0.5" role="radio"><b>Looser</b><small>0.5</small></button>
+          <button data-fit="0.6" role="radio"><b>Standard</b><small>0.6</small></button>
+          <button data-fit="0.7" role="radio"><b>Tighter</b><small>0.7</small></button>
+        </div>
+        <p class="hint">Print the 1×1 fit test once and pick what clicks best on your printer.</p>
+      </div>
+
+      <div class="stats" aria-live="polite">
+        <div><span class="k">Filament</span><span class="v" id="statGrams">—</span></div>
+        <div><span class="k">Length</span><span class="v" id="statMetres">—</span></div>
+        <div><span class="k">Volume</span><span class="v" id="statVol">—</span></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="dl3mf" type="button">Download 3MF</button>
+        <button class="btn" id="dlStl" type="button">STL</button>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="addPlate" type="button">+ Add to plate</button>
+        <button class="btn ghost" id="addLid" type="button">+ Add matching lid</button>
+      </div>
+
+      <div class="group plate">
+        <div class="group-title">Plate <span class="muted" id="plateTotal">empty</span></div>
+        <ul class="plate-list" id="plateList"></ul>
+        <div class="preset-row">
+          <select id="presetSel" aria-label="Load a preset set">
+            <option value="">Load a preset…</option>
+            <option value="fit">Fit test (1×1 box + lid)</option>
+            <option value="starter">Starter set (12 parts)</option>
+            <option value="screws">Screw wall (6 hoppers)</option>
+          </select>
+          <button class="btn small ghost" id="clearPlate" type="button">Clear</button>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="dlPlate" type="button" disabled>Download plate (.3mf)</button>
+          <button class="btn" id="dlZip" type="button" disabled>All as STL (.zip)</button>
+        </div>
+        <p class="hint" id="plateHint">The plate goes into one 3MF with every part as its own object. In Bambu Studio press <kbd>A</kbd> to auto-arrange.</p>
+      </div>
+
+      <div class="share">
+        <button class="btn small ghost" id="copyLink" type="button">Copy link to this part</button>
+      </div>
+    </aside>
+  </main>
+
+  <dialog id="about">
+    <form method="dialog" class="dlg">
+      <h2>The AESS standard</h2>
+      <p>Every AESS part follows the same rules, so anything stacks and snaps onto anything else.</p>
+      <table>
+        <tr><th>Footprint</th><td><code>n × 42 mm − 0.5</code>, 1–6 units each way</td></tr>
+        <tr><th>Height</th><td><code>nh × 7 mm + 4.3</code>; each bin adds exactly <code>nh × 7</code> to a stack</td></tr>
+        <tr><th>Lid</th><td>The same part at nh = 1: snaps on and takes another bin on top</td></tr>
+        <tr><th>Foot</th><td>4 mm deep with a 45° flare, so no supports</td></tr>
+        <tr><th>Rim</th><td>Always 1.2 mm in the snap zone, whatever the wall</td></tr>
+        <tr><th>Snap</th><td>0.6 mm bead on the foot, 0.4 mm groove inside the rim</td></tr>
+        <tr><th>Walls</th><td>Lite 0.8 · Standard 1.2 · Heavy 1.4 mm</td></tr>
+      </table>
+      <h3>Print settings</h3>
+      <p>0.4 mm nozzle, 0.2 mm layers (0.28 for speed). 2 wall loops for Lite, 3 for Standard and Heavy. 0% infill, no supports. Print it as exported: foot down.</p>
+      <div class="dlg-actions"><button class="btn primary">Close</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+  <noscript><p style="padding:16px">The AESS generator needs JavaScript to build parts.</p></noscript>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

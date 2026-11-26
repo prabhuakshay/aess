@@ -1,0 +1,21 @@
+name: New part or feature
+description: Suggest a new AESS part (dividers, cups, label clips…) or a generator feature
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What should it do?
+      description: What will it store or solve? Sketches and photos help.
+    validations:
+      required: true
+  - type: checkboxes
+    id: standard
+    attributes:
+      label: The standard
+      options:
+        - label: It fits the 42 mm grid and the 7 mm height units, or I've explained why it can't.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
