@@ -4,6 +4,20 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-26
+### Added
+- **Drawer cabinet:**
+  - The cabinet is itself an AESS bin: it stacks, sits on bases and takes bins on top.
+  - Open front, with a 45° ledge on each side wall for every drawer. It prints upright with no supports.
+- **Drawers**, sized from the cabinet:
+  - flat bottoms that ride on the ledges
+  - a pull lip or finger notch
+  - an engraved label, and optional dividers
+
+  The ledge above each drawer stops it tipping when pulled out.
+- **Counting tray:** raised edges and a pour spout (left, right or none) that narrows at 45° to a 14 mm opening at floor level, plus optional 10 mm count lines.
+- Tests: drawers rest on their ledges, slide without touching the cabinet or each other, and clear a bin stacked on top.
+
 ## [0.3.0] - 2026-11-26
 ### Added
 - **New parts:**

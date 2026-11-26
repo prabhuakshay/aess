@@ -32,7 +32,7 @@ AESS started as stackable storage for a hardware shop and grew into an open syst
 - ✅ **Strength:** floor ribs, wall ribs, gussets, floor-load estimate.
 - ✅ **Hopper side slope, finger grips, thread-check holes.**
 - 💡 **Long tray** presets (1×4, 1×5) for long bolts, hinges and threaded rod.
-- 💡 **Drawer mode:** printed corner posts plus plywood sides turn a stack of bins into a drawer cabinet.
+- ✅ **Drawer cabinet** with drawers (the cabinet stacks like any bin).
 
 ## Closing and structure
 - ✅ **Lid pinch tab**, and the brand on lids.
@@ -57,7 +57,7 @@ AESS started as stackable storage for a hardware shop and grew into an open syst
   - a thread-check hole (M3–M10)
   - a length ruler
 - 💡 **Sample window:** one screw clipped on the front to show what's inside.
-- 💡 **Counting scoop** with a pour spout.
+- ✅ **Counting tray** with a pour spout and count lines.
 - 💡 **Counter caddy:** a carry tray for 1×1 and 1×2 bins.
 - 💡 **Colour code** by category: one filament colour per kind of stock.
 - 💡 **QR or index numbers** on labels, linked to a stock sheet.

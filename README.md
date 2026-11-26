@@ -25,7 +25,11 @@ AESS started as storage for a hardware shop: screws, nuts, anchors and fittings,
   - drop-in cups
   - a lift-out tray
   - holders: a drill index with engraved sizes, hex bits, a tool grid
-- **Structure:** base plates that link stacks so they don't tip, and a carry caddy.
+- **Structure:**
+  - base plates that link stacks so they don't tip
+  - a drawer cabinet that stacks like any bin, with matching drawers
+  - a carry caddy
+- **Counter tools:** a counting tray with a pour spout and count lines.
 - **Configurable:**
   - wall weights, floor thickness
   - ribbed floors and walls, corner gussets

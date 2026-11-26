@@ -260,3 +260,33 @@ test('print settings follow the wall class', () => {
   assert.equal(printSettings({ wall: 'heavy' }).wall_loops, 4);
   assert.equal(printSettings({}).sparse_infill_density, '0%');
 });
+
+test('counting tray: valid, flat, spout on either side', () => {
+  for (const spout of ['left', 'right', 'none']) {
+    const p = make({ type: 'counter', nx: 3, ny: 2, spout });
+    assert.equal(p.status(), 'NoError');
+    assert.ok(Math.abs(p.boundingBox().min[2]) < 1e-6 && p.volume() > 5000, spout);
+    p.delete();
+  }
+  const lines = vol({ type: 'counter', nx: 2, ny: 2 }), plain = vol({ type: 'counter', nx: 2, ny: 2, countLines: false });
+  assert.ok(lines < plain, 'count lines are engraved');
+});
+
+test('drawer cabinet: drawers sit on their ledges, slide freely and clear a stacked bin', () => {
+  for (const [nx, ny, nh, rows, wall] of [[2, 3, 10, 3, 'std'], [1, 2, 20, 6, 'lite'], [3, 2, 8, 2, 'heavy']]) {
+    const spec = { type: 'cabinet', nx, ny, nh, cabRows: rows, wall };
+    const sp = resolveSpec(spec);
+    assert.equal(sp.ledges.length, rows);
+    const cab = make(spec);
+    assert.equal(cab.status(), 'NoError');
+    const drawers = placements({ ...spec, type: 'drawer' }).map((p) => buildPart(M, { ...spec, type: 'drawer' }, { segments: 8, font, orient: 'use' }).translate(p));
+    for (const d of drawers) assert.ok(clashVol(cab, d) < 0.05, `${sp.name}: drawer hits the cabinet by ${clashVol(cab, d).toFixed(3)}`);
+    for (let i = 0; i < drawers.length - 1; i++) assert.ok(clashVol(drawers[i], drawers[i + 1]) < 1e-3, 'drawers overlap');
+    const sunk = buildPart(M, { ...spec, type: 'drawer' }, { segments: 8, font, orient: 'use' }).translate([0, 0, sp.ledges[0] - 0.5]);
+    assert.ok(clashVol(cab, sunk) > 1, 'drawer rests on its ledges');
+    const upper = make({ type: 'box', nx, ny, nh: 3 }).translate([0, 0, sp.H - STD.lip - STD.fit]);
+    for (const d of drawers) assert.ok(clashVol(upper, d) < 1e-3, 'stacked bin clears the top drawer');
+    assert.ok(clashVol(upper, cab) < 1e-3, 'stacked bin nests in the cabinet');
+    [cab, sunk, upper, ...drawers].forEach((m) => m.delete());
+  }
+});

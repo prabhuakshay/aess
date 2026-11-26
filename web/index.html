@@ -78,6 +78,9 @@
           <button class="typecard" data-type="holder" role="radio" data-tip="A deck insert for the box set above: a drill index with engraved sizes, a hex-bit holder, or a hole grid for screwdrivers and pens. Shortcut: 6"><svg viewBox="0 0 48 40"><path d="M6 16h36v4H6z"/><circle cx="14" cy="10" r="2" class="thin"/><circle cx="24" cy="10" r="2" class="thin"/><circle cx="34" cy="10" r="2" class="thin"/><path d="M8 20v14M40 20v14" class="thin"/></svg><span class="tc-name">Holder</span><span class="tc-sub">bits & tools</span></button>
           <button class="typecard" data-type="base" role="radio" data-tip="A base plate that 1–6 stacks stand in, linking them so tall free-standing stacks don't tip. Pockets underneath for rubber feet or magnets. Shortcut: 7"><svg viewBox="0 0 48 40"><path d="M4 26h40v6H4z"/><path d="M8 26v-14h14v14M26 26v-14h14v14" class="thin"/></svg><span class="tc-name">Base</span><span class="tc-sub">stack footing</span></button>
           <button class="typecard" data-type="caddy" role="radio" data-tip="A carry tote with a handle and wells for 1 × 1 bins, to bring samples to a customer. Shortcut: 8"><svg viewBox="0 0 48 40"><path d="M4 24h40v10H4z"/><path d="M12 24V8h24v16M18 14h12" class="thin"/></svg><span class="tc-name">Caddy</span><span class="tc-sub">carry tote</span></button>
+          <button class="typecard" data-type="counter" role="radio" data-tip="A flat counting tray with raised edges and a pour spout in one front corner: count screws onto it, then pour them straight into a bag. Optional 10 mm count lines. Shortcut: 9"><svg viewBox="0 0 48 40"><path d="M4 14v14h34l6 6v-6M4 14h40v14"/><path d="M10 20h22" class="thin"/></svg><span class="tc-name">Count tray</span><span class="tc-sub">pour spout</span></button>
+          <button class="typecard" data-type="cabinet" role="radio" data-tip="A drawer cabinet that is itself an AESS bin: it stacks, sits on bases and takes bins on top. Open front with a ledge on each side for every drawer; prints upright with no supports."><svg viewBox="0 0 48 40"><path d="M6 4h36v30H6z"/><path d="M6 14h36M6 24h36" class="thin"/></svg><span class="tc-name">Cabinet</span><span class="tc-sub">drawer unit</span></button>
+          <button class="typecard" data-type="drawer" role="radio" data-tip="Drawers sized for the cabinet set above: flat bottoms that ride on the ledges, a pull lip and an engraved label. The plate adds one per ledge."><svg viewBox="0 0 48 40"><path d="M6 12h36v18H6z"/><path d="M18 18h12" class="thin"/></svg><span class="tc-name">Drawers</span><span class="tc-sub">for the cabinet</span></button>
         </div>
         <p class="hint" id="hostNote" hidden></p>
       </section>
@@ -288,6 +291,36 @@
         </label>
       </details>
 
+      <details class="sec" open data-sec="cabinet" id="cabinetSec">
+        <summary>Drawer cabinet <span class="muted" id="cabReadout"></span></summary>
+        <label class="stepfield">Drawers <button class="tip" type="button" data-tip="How many drawers the cabinet holds. They share the height evenly; a taller cabinet (more height units above) gives taller drawers."></button><span class="stepper"><button type="button" data-step="cabRows:-1" aria-label="Fewer">−</button><output id="cabRowsOut">3</output><button type="button" data-step="cabRows:1" aria-label="More">+</button></span></label>
+        <div class="field">
+          <label>Drawer pull <button class="tip" type="button" data-tip="Lip: a ledge along the top of the drawer front to hook a finger under (45° underneath, no supports). Notch: a finger scoop in the front edge, flush with the cabinet."></button></label>
+          <div class="seg seg2" id="drawerPullSeg" role="radiogroup" aria-label="Drawer pull">
+            <button data-dpull="lip" role="radio">Pull lip</button>
+            <button data-dpull="notch" role="radio">Finger notch</button>
+          </div>
+        </div>
+        <p class="hint" id="cabHint"></p>
+      </details>
+
+      <details class="sec" open data-sec="counter" id="counterSec">
+        <summary>Counting tray</summary>
+        <div class="field">
+          <label>Pour spout <button class="tip" type="button" data-tip="Which front corner the spout is on. The spout's walls narrow at 45° to a 14 mm opening at floor level, so screws slide straight into a bag."></button></label>
+          <div class="seg" id="spoutSeg" role="radiogroup" aria-label="Spout">
+            <button data-spout="left" role="radio">Left</button>
+            <button data-spout="right" role="radio">Right</button>
+            <button data-spout="none" role="radio">None</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="trayWall">Edge height <span class="muted" id="trayWallReadout"></span> <button class="tip" type="button" data-tip="Height of the raised edge. Low edges are easier to sweep parts across; higher ones hold more."></button></label>
+          <input type="range" id="trayWall" min="5" max="40" step="1" value="12">
+        </div>
+        <label class="check"><input type="checkbox" id="countLines" checked> Count lines <button class="tip" type="button" data-tip="A 10 mm grid engraved into the floor, to line up parts in rows of ten while counting."></button></label>
+      </details>
+
       <details class="sec" open data-sec="cups" id="cupsSec">
         <summary>Cups <span class="muted" id="cupsReadout"></span></summary>
         <div class="two">
@@ -379,6 +412,8 @@
             <option value="riser">Counter riser set (3 steps)</option>
             <option value="sorter">Sheet & disc sorter</option>
             <option value="dispenser">Wire dispenser (box + dispenser lid)</option>
+            <option value="cabinet">Drawer cabinet (cabinet + 3 drawers)</option>
+            <option value="counter">Counting tray</option>
           </select>
           <button class="btn small ghost" id="clearPlate" type="button">Clear</button>
         </div>

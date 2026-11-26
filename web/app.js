@@ -169,10 +169,10 @@ function draw() {
   group.clear();
   if (!current) return;
   const sp = current.spec;
-  const stack = $('stackToggle').checked && isBin(sp.type) ? 3 : 1;
+  const stack = $('stackToggle').checked && (isBin(sp.type) || sp.type === 'cabinet') ? 3 : 1;
   const geo = geometryOf(current);
   const pitch = sp.H - STD.lip - STD.fit;
-  const showLid = sp.type === 'box' && sp.rails && $('lidToggle').checked && currentLid;
+  const showLid = ((sp.type === 'box' && sp.rails) || sp.type === 'cabinet') && $('lidToggle').checked && currentLid;
   const lidGeo = showLid ? geometryOf(currentLid) : null;
   const showHost = hosted(sp.type) && $('lidToggle').checked && currentHost;
   const place = showHost ? placements(sp) : null;
@@ -190,9 +190,11 @@ function draw() {
       m.position.z = k * pitch;
       group.add(m);
       if (lidGeo) {
-        const l = new THREE.Mesh(lidGeo, k === 0 ? lidMat : ghostMat);
-        l.position.z = k * pitch + sp.zs;
-        group.add(l);
+        for (const z of sp.type === 'cabinet' ? sp.ledges : [sp.zs]) {
+          const l = new THREE.Mesh(lidGeo, k === 0 ? lidMat : ghostMat);
+          l.position.z = k * pitch + z;
+          group.add(l);
+        }
       }
     }
   }
@@ -295,6 +297,9 @@ bindSeg('#lidStyleSeg', 'lidstyle', 'lidStyle');
 bindSeg('#tapeSeg', 'tape', 'labelTape', Number);
 bindSeg('#holderSeg', 'holder', 'holderMode');
 bindSeg('#padsSeg', 'pads', 'basePads');
+bindSeg('#drawerPullSeg', 'dpull', 'drawerPull');
+bindSeg('#spoutSeg', 'spout', 'spout');
+$('countLines').addEventListener('change', (e) => set({ countLines: e.target.checked }));
 
 const bindRange = (id, key, cast = Number) => $(id).addEventListener('input', (e) => set({ [key]: cast(e.target.value) }));
 bindRange('nh', 'nh');
@@ -304,7 +309,7 @@ bindRange('bar', 'bar');
 bindRange('scoop', 'scoop');
 bindRange('front', 'frontRatio', (v) => Number(v) / 100);
 bindRange('sideSlope', 'sideSlope', (v) => Number(v) / 100);
-for (const k of ['ribH', 'gusset', 'trayDepth', 'dispHole', 'holderH', 'gridHole', 'gridPitch', 'caddyH']) bindRange(k, k);
+for (const k of ['ribH', 'gusset', 'trayDepth', 'dispHole', 'holderH', 'gridHole', 'gridPitch', 'caddyH', 'trayWall']) bindRange(k, k);
 for (const k of ['grips', 'gauge', 'wallRibs']) $(k).addEventListener('change', (e) => set({ [k]: e.target.checked }));
 $('chamfer').addEventListener('change', (e) => set({ chamfer: e.target.checked ? 0.4 : 0 }));
 $('rails').addEventListener('change', (e) => set({ lidRails: e.target.checked }));
@@ -382,8 +387,8 @@ document.addEventListener('keydown', (e) => {
   if (mod && e.key.toLowerCase() === 'y' && !typing) { e.preventDefault(); redo(); return; }
   if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); $('dl3mf').click(); return; }
   if (typing || mod || e.altKey) return;
-  const typeKeys = ['hopper', 'box', 'lid', 'cup', 'tray', 'holder', 'base', 'caddy'];
-  if (/^[1-8]$/.test(e.key)) pickType(typeKeys[Number(e.key) - 1]);
+  const typeKeys = ['hopper', 'box', 'lid', 'cup', 'tray', 'holder', 'base', 'caddy', 'counter'];
+  if (/^[1-9]$/.test(e.key)) pickType(typeKeys[Number(e.key) - 1]);
   else if (e.key.toLowerCase() === 'l') { $('lidToggle').checked = !$('lidToggle').checked; draw(); }
   else if (e.key.toLowerCase() === 'x') { $('sectionToggle').checked = !$('sectionToggle').checked; applyClip(); }
 });
@@ -395,7 +400,8 @@ function refresh() {
   // keep the state normalised without losing the user's other choices
   if (sp.sizeMode === 'grid') Object.assign(state, { nx: sp.nx, ny: sp.ny, ...(sp.type !== 'lid' ? { nh: sp.nh } : {}) });
   const t = sp.type, isLid = t === 'lid', isGrid = sp.sizeMode === 'grid';
-  const bin = isBin(t), insert = TYPES[t].group === 'insert', noHeight = isLid || t === 'base' || t === 'caddy';
+  const bin = isBin(t), insert = TYPES[t].group === 'insert', noHeight = isLid || t === 'base' || t === 'caddy' || t === 'counter';
+  const cab = t === 'cabinet' || t === 'drawer';
   const sec = (name, show) => { $('panel').querySelector(`[data-sec="${name}"]`).hidden = !show; };
 
   checked('.typecard', (b) => b.dataset.type === t);
@@ -412,6 +418,8 @@ function refresh() {
   checked('#tapeSeg button', (b) => Number(b.dataset.tape) === sp.labelTape);
   checked('#holderSeg button', (b) => b.dataset.holder === sp.holderMode);
   checked('#padsSeg button', (b) => b.dataset.pads === sp.basePads);
+  checked('#drawerPullSeg button', (b) => b.dataset.dpull === sp.drawerPull);
+  checked('#spoutSeg button', (b) => b.dataset.spout === sp.spout);
 
   $('gridBox').hidden = !isGrid;
   $('customBox').hidden = isGrid;
@@ -431,6 +439,8 @@ function refresh() {
     holder: `Sized for the ${hostDesc} below. Prints upside down (deck on the bed).`,
     base: `The footprint below is one stack; the base holds ${sp.baseCols * sp.baseRows}.`,
     caddy: `Wells take 1 × 1 bins of the grid below.`,
+    drawer: `Sized for the ${isGrid ? `${sp.nx}×${sp.ny}×${sp.nh}` : dims(sp)} cabinet below with ${sp.cabRows} drawers. Print that cabinet with the same settings.`,
+    counter: `The footprint below sets the tray's size; the spout adds 24 mm at the front.`,
   }[t];
   $('hostNote').hidden = !note;
   $('hostNote').textContent = note ?? '';
@@ -464,10 +474,12 @@ function refresh() {
   $('sizeReadout').textContent = isGrid ? `${sp.nx} × ${sp.ny}${noHeight ? '' : ` × ${sp.nh}`} · ${dims(sp)}` : dims(sp);
 
   // walls / inside / front sections only matter for bins
-  sec('walls', bin || insert);
+  sec('walls', bin || insert || t === 'cabinet');
   sec('strength', bin || t === 'cup' || t === 'holder');
-  sec('inside', bin || t === 'tray');
-  sec('front', bin || isLid);
+  sec('inside', bin || t === 'tray' || t === 'drawer');
+  sec('front', bin || isLid || t === 'drawer');
+  sec('cabinet', cab);
+  sec('counter', t === 'counter');
   sec('cups', t === 'cup');
   sec('holder', t === 'holder');
   sec('base', t === 'base');
@@ -513,6 +525,11 @@ function refresh() {
   $('caddyRowsOut').textContent = sp.caddyRows;
   $('caddyH').value = sp.caddyH; $('caddyHReadout').textContent = len(sp.caddyH);
   $('caddyReadout').textContent = `${sp.caddyCols * sp.caddyRows} wells`;
+  $('cabRowsOut').textContent = sp.cabRows;
+  $('cabReadout').textContent = cab ? `${sp.cabRows} × ${len(sp.drawerH)} tall` : '';
+  $('cabHint').textContent = cab ? `Each drawer: ${len(sp.drawerW)} × ${len(sp.drawerD)} × ${len(sp.drawerH)} (outside).` : '';
+  $('trayWall').value = sp.trayWall; $('trayWallReadout').textContent = len(sp.trayWall);
+  $('countLines').checked = sp.countLines;
   $('statLoadBox').hidden = !bin;
   const ps = printSettings(state);
   const preset = !bin ? (t === 'base' ? 'Standard @BBL A1 (15% infill)' : 'AESS Lite') : ps.wall_loops <= 2 ? 'AESS Lite' : ps.wall_loops === 3 ? 'AESS Standard' : 'AESS Heavy';
@@ -543,17 +560,17 @@ function refresh() {
   $('lidPullField').hidden = t === 'hopper';
   $('lidBrandRow').hidden = !isLid;
   $('lidBrand').checked = sp.lidBrand;
-  $('lidToggleWrap').hidden = !((t === 'box' && sp.rails) || hosted(t));
-  $('lidToggleWrap').querySelector('span').textContent = hosted(t) ? 'Box' : 'Lid';
+  $('lidToggleWrap').hidden = !((t === 'box' && sp.rails) || hosted(t) || t === 'cabinet');
+  $('lidToggleWrap').querySelector('span').textContent = t === 'drawer' ? 'Cabinet' : hosted(t) ? 'Box' : t === 'cabinet' ? 'Drawers' : 'Lid';
   $('lidToggleWrap').dataset.tip = hosted(t) ? 'Show the box this part fits, see-through.' : 'Show the slide lid in place on this box.';
-  $('addLid').hidden = !((t === 'box' && sp.rails) || hosted(t));
-  $('addLid').textContent = hosted(t) ? '+ Add the box' : '+ Add its lid';
+  $('addLid').hidden = !((t === 'box' && sp.rails) || hosted(t) || t === 'cabinet');
+  $('addLid').textContent = t === 'drawer' ? '+ Add the cabinet' : hosted(t) ? '+ Add the box' : t === 'cabinet' ? '+ Add its drawers' : '+ Add its lid';
   $('hudDims').title = '';
   $('undoBtn').disabled = !past.length;
   $('redoBtn').disabled = !future.length;
 
   $('hudName').textContent = sp.name;
-  const forBox = `for a ${isGrid ? `${sp.nx}×${sp.ny}${isLid ? '' : `×${sp.nh}`}` : dims(sp)} box`;
+  const forBox = `for a ${isGrid ? `${sp.nx}×${sp.ny}${isLid ? '' : `×${sp.nh}`}` : dims(sp)} ${t === 'drawer' ? 'cabinet' : 'box'}`;
   $('hudDims').textContent = bin ? dims(sp) : insert ? forBox : `${dims({ ...sp, W: sp.pW, D: sp.pD, H: sp.pH, type: 'x' })}${isLid ? ` · ${forBox}` : ''}`;
   $('hudWarn').replaceChildren(...sp.warnings.map((w) => Object.assign(document.createElement('li'), { textContent: w })));
 
@@ -570,11 +587,11 @@ function schedulePreview() {
     const spec = { ...state };
     $('busy').hidden = false;
     try {
-      const wantLid = spec.type === 'box' && spec.lidRails !== false;
+      const wantLid = (spec.type === 'box' && spec.lidRails !== false) || spec.type === 'cabinet';
       const wantHost = hosted(spec.type);
       const [res, lid, host] = await Promise.all([
         build(spec, PREVIEW_SEGMENTS, 'use'),
-        wantLid ? build(lidSpecOf(spec), PREVIEW_SEGMENTS) : null,
+        wantLid ? (spec.type === 'cabinet' ? build({ ...spec, type: 'drawer' }, PREVIEW_SEGMENTS, 'use') : build(lidSpecOf(spec), PREVIEW_SEGMENTS)) : null,
         wantHost ? build(hostSpec(spec), PREVIEW_SEGMENTS) : null,
       ]);
       if (mine !== latest) return;
@@ -651,9 +668,10 @@ function addToPlate(spec, qty = 1) {
 }
 $('addPlate').addEventListener('click', () => { const q = defaultQty(state); addToPlate({ ...state }, q); toast(`Added ${q > 1 ? `${q} × ` : ''}${nameOf(state)}`); });
 $('addLid').addEventListener('click', () => {
-  const extra = hosted(state.type) ? hostSpec(state) : lidSpecOf(state);
-  addToPlate(extra);
-  toast(`Added ${nameOf(extra)}`);
+  const extra = state.type === 'cabinet' ? { ...state, type: 'drawer' } : hosted(state.type) ? hostSpec(state) : lidSpecOf(state);
+  const q = state.type === 'cabinet' ? defaultQty(extra) : 1;
+  addToPlate(extra, q);
+  toast(`Added ${q > 1 ? `${q} × ` : ''}${nameOf(extra)}`);
 });
 $('clearPlate').addEventListener('click', () => { plate = []; store.set('aess-plate', plate); renderPlate(); });
 
@@ -675,6 +693,8 @@ const PRESETS = {
   riser: [3, 6, 9].map((nh) => ({ type: 'box', nx: 2, ny: 3, nh, lidRails: false, wall: 'lite', pattern: 'hex', hole: 10, textStyle: 'off', wallRibs: false })),
   sorter: [{ type: 'box', nx: 2, ny: 3, nh: 8, lidRails: false, divY: 12, label: 'Discs & sheets' }],
   dispenser: [{ type: 'box', nx: 2, ny: 2, nh: 6, label: 'Wire' }, { type: 'lid', nx: 2, ny: 2, lidStyle: 'dispenser', dispHole: 12 }],
+  cabinet: [{ type: 'cabinet', nx: 2, ny: 3, nh: 10, cabRows: 3 }, { type: 'drawer', nx: 2, ny: 3, nh: 10, cabRows: 3, qty: 3 }],
+  counter: [{ type: 'counter', nx: 3, ny: 2 }],
 };
 $('presetSel').addEventListener('change', (e) => {
   const items = PRESETS[e.target.value];

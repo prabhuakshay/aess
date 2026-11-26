@@ -1,6 +1,6 @@
 // Offline support. The app's own files load from the network first (so updates show at once)
 // and fall back to the cache offline; pinned CDN libraries and fonts are cached on first use.
-const VERSION = 'aess-v0.3.0';
+const VERSION = 'aess-v0.4.0';
 const SHELL = [
   './', 'index.html', 'style.css', 'app.js', 'worker.js', 'aess-core.js', 'aess-export.js',
   'favicon.svg', 'icon-192.png', 'icon-512.png', 'manifest.webmanifest', 'fonts/BarlowCondensed-Bold.ttf',

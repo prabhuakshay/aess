@@ -36,6 +36,9 @@ export const TYPES = Object.freeze({
   holder: { code: 'HOLD', label: 'Holder', group: 'insert' },
   base: { code: 'BASE', label: 'Base plate', group: 'structure' },
   caddy: { code: 'CADDY', label: 'Carry caddy', group: 'structure' },
+  counter: { code: 'CNT', label: 'Counting tray', group: 'tool' },
+  cabinet: { code: 'CAB', label: 'Drawer cabinet', group: 'cabinet' },
+  drawer: { code: 'DRW', label: 'Drawer', group: 'insert' },
 });
 export const PATTERNS = Object.freeze(['none', 'diamond', 'hex', 'slots']);
 
@@ -59,6 +62,8 @@ export const DEFAULTS = Object.freeze({
   holderMode: 'drill', holderH: 0, gridHole: 8, gridPitch: 14,
   baseCols: 1, baseRows: 1, basePads: 'rubber',
   caddyCols: 4, caddyRows: 2, caddyH: 60,
+  cabRows: 3, drawerPull: 'lip',
+  trayWall: 12, spout: 'left', countLines: true,
 });
 
 const num = (v, d) => (Number.isFinite(Number(v)) && v !== '' && v != null ? Number(v) : d);
@@ -102,7 +107,7 @@ export function resolveSpec(input = {}) {
   if (H < minH) { H = minH; if (sizeMode === 'custom' && group === 'bin') warnings.push(`Raised to the ${minH} mm minimum height.`); }
 
   const s = rim + fit;
-  const hostIsBox = type !== 'hopper';
+  const hostIsBox = type !== 'hopper' && type !== 'cabinet' && type !== 'drawer';
   const rails = hostIsBox && i.lidRails !== false && H >= 18;
   if (type === 'box' && i.lidRails !== false && !rails) warnings.push('Slide-lid rails need a box at least 18 mm tall.');
   const zs = H - lidZ;                       // lid bottom / ledge top
@@ -156,7 +161,17 @@ export function resolveSpec(input = {}) {
     caddyCols: Math.round(clamp(num(i.caddyCols, 4), 1, 6)),
     caddyRows: Math.round(clamp(num(i.caddyRows, 2), 1, 4)),
     caddyH: clamp(num(i.caddyH, 60), 30, 150),
+    cabRows: Math.round(clamp(num(i.cabRows, 3), 1, 10)),
+    drawerPull: pick(i.drawerPull, ['lip', 'notch'], 'lip'),
+    trayWall: clamp(num(i.trayWall, 12), 5, 40),
+    spout: pick(i.spout, ['left', 'right', 'none'], 'left'),
+    countLines: i.countLines !== false,
   };
+  if (type === 'cabinet' || type === 'drawer') {
+    // the cabinet's inside belongs to its drawers: no ribs, patterns, dividers or grips in the shell
+    Object.assign(sp, { pattern: 'none', wallRibs: false, floorRibs: 'none', ribTop: floor, gusset: 0, scoop: 0, grips: false, gauge: false });
+    if (type === 'cabinet') Object.assign(sp, { divX: 0, divY: 0 });
+  }
   if (type === 'tray' && !sp.trayDepth) {
     sp.trayDepth = autoTrayDepth(sp);
     sp.trayZ = trayTop - sp.trayDepth;
@@ -178,6 +193,9 @@ export function resolveSpec(input = {}) {
   else if (type === 'holder') sp.name = `AESS-HOLD-${full}-${sp.holderMode.toUpperCase()}`;
   else if (type === 'base') sp.name = `AESS-BASE-${foot}${sizeMode === 'grid' ? gridTag : ''}-${sp.baseCols}x${sp.baseRows}`;
   else if (type === 'caddy') sp.name = `AESS-CADDY-${sp.caddyCols}x${sp.caddyRows}${sizeMode === 'grid' && gridTag ? gridTag : ''}`;
+  else if (type === 'counter') sp.name = `AESS-CNT-${foot}${sizeMode === 'grid' ? gridTag : ''}`;
+  else if (type === 'cabinet') sp.name = `AESS-CAB-${full}-${wallTag}-${sp.cabRows}D`;
+  else if (type === 'drawer') sp.name = `AESS-DRW-${full}-${sp.cabRows}D`;
   else sp.name = `AESS-${code}-${full}-${wallTag}${type === 'box' && !rails ? '-OPEN' : ''}`;
 
   // printed size of the part itself
@@ -186,6 +204,12 @@ export function resolveSpec(input = {}) {
   else if (type === 'caddy') {
     const cw = (sizeMode === 'grid' ? U - gap : 41.5) + 1;
     Object.assign(sp, { cell: cw, pW: sp.caddyCols * (cw + 1.6) + 1.6, pD: sp.caddyRows * (cw + 1.6) + 1.6 + (sp.caddyRows > 1 ? 3 : 0), pH: sp.caddyH });
+  } else if (type === 'counter') Object.assign(sp, { pW: W, pD: D + (sp.spout === 'none' ? 0 : 24), pH: sp.trayWall });
+  else if (type === 'cabinet' || type === 'drawer') {
+    Object.assign(sp, cabinetLayout(sp));
+    if (type === 'drawer') Object.assign(sp, { pW: sp.drawerW, pD: sp.drawerD + 7, pH: sp.drawerH });
+    else Object.assign(sp, { pW: W, pD: D, pH: H });
+    if (sp.drawerH < 10) warnings.push('Drawers would be under 10 mm tall: fewer drawers or a taller cabinet.');
   } else Object.assign(sp, { pW: W, pD: D, pH: H });
   if (sp.pW > STD.bed || sp.pD > STD.bed || sp.pH > STD.bed) warnings.push(`Larger than the ${STD.bed} mm A1 bed.`);
   return sp;
@@ -602,6 +626,7 @@ function buildBin(M, sp, opts) {
   else cavity.delete();
 
   if (sp.trayZ != null && sp.type === 'box') part = op(M, 'union', part, trayLedge(M, sp, seg));
+  if (sp.type === 'cabinet') return cabinetFeatures(M, sp, part);
   if (sp.rails) part = railsAndCuts(M, sp, part, seg);
 
   // finger grips through the short sides, just below the rim zone
@@ -896,6 +921,124 @@ function buildCaddy(M, sp, opts) {
   return op(M, 'union', part, handle);
 }
 
+// ---------- drawer cabinet ----------
+
+const LEDGE = 2.5; // how far a drawer ledge sticks out of the side wall (45 deg underside)
+
+/** Ledge heights and drawer size for a cabinet spec. */
+function cabinetLayout(sp) {
+  const z0 = STD.lip + sp.s + 0.6;                 // above the flare, where the inner wall is straight
+  const top = sp.H - STD.lip - STD.fit - 0.5;      // clear of the next bin's foot
+  const pitch = (top - z0) / sp.cabRows;
+  const ledges = Array.from({ length: sp.cabRows }, (_, k) => z0 + k * pitch);
+  const clr = 0.4;
+  return {
+    ledges, pitch,
+    drawerW: sp.W - 2 * (Math.max(sp.wall, STD.rim) + clr),
+    drawerD: sp.D - sp.wall - 0.6,
+    drawerH: pitch - LEDGE - 0.8 - 0.6,
+  };
+}
+
+function cabinetFeatures(M, sp, part) {
+  const { r } = STD;
+  // open the whole front above the floor (corners too, so drawers pass)
+  part = op(M, 'difference', part, box(M, -sp.W, sp.W, -sp.D / 2 - 1, -sp.D / 2 + r + 0.5, sp.floor, sp.H + 1));
+  // a ledge on each side wall for every drawer: flat top, 45 deg underside
+  const ledges = [];
+  for (const z of sp.ledges) {
+    for (const side of [-1, 1]) {
+      const xw = side * (sp.W / 2 - sp.wall + 0.3), xt = side * (sp.W / 2 - sp.wall - LEDGE);
+      const y0 = -sp.D / 2, y1 = sp.D / 2 - sp.wall + 0.3;
+      const pts = [];
+      for (const y of [y0, y1]) pts.push([xw, y, z - LEDGE - 0.8], [xw, y, z], [xt, y, z], [xt, y, z - 0.8]);
+      ledges.push(M.Manifold.hull(pts));
+    }
+  }
+  return op(M, 'union', part, unionAll(M, ledges));
+}
+
+/** One drawer: flat bottom, rests on a pair of ledges; front flush with the cabinet, pull on the front. */
+function buildDrawer(M, sp, opts) {
+  const seg = opts.segments;
+  const w = sp.drawerW, d = sp.drawerD, h = sp.drawerH, t = 1.2, rr = 1.5;
+  const cy = -sp.D / 2 + d / 2;
+  let drawer = op(M, 'difference', rprism(M, w / 2, d / 2, rr, 0, h, seg, 0, cy), rprism(M, w / 2 - t, d / 2 - t, rr, t, h + 1, seg, 0, cy));
+  // dividers
+  const inner = [];
+  for (let k = 1; k <= sp.divX; k++) { const x = -w / 2 + (k * w) / (sp.divX + 1); inner.push(box(M, x - 0.4, x + 0.4, cy - d / 2, cy + d / 2, 0, h - 1)); }
+  for (let k = 1; k <= sp.divY; k++) { const y = cy - d / 2 + (k * d) / (sp.divY + 1); inner.push(box(M, -w / 2, w / 2, y - 0.4, y + 0.4, 0, h - 1)); }
+  drawer = op(M, 'union', drawer, unionAll(M, inner));
+  const yF = -sp.D / 2;
+  const pw = Math.min(50, w * 0.45);
+  if (sp.drawerPull === 'lip') {
+    // a pull lip along the top of the front, 45 deg underneath so it prints without supports
+    const out = Math.min(7, h * 0.45), zt = h;
+    const pts = [];
+    for (const x of [-pw / 2, pw / 2]) pts.push([x, yF + 0.5, zt - out - 2], [x, yF + 0.5, zt], [x, yF - out, zt], [x, yF - out, zt - 2]);
+    drawer = op(M, 'union', drawer, M.Manifold.hull(pts));
+  } else {
+    const nr = Math.min(9, h * 0.6);
+    drawer = op(M, 'difference', drawer, M.Manifold.cylinder(t + 2, nr, nr, seg * 4).rotate([-90, 0, 0]).translate([0, yF - 1, h + nr * 0.35]));
+  }
+  // label (or brand) engraved on the front, below the pull
+  const zHi = sp.drawerPull === 'lip' ? h - Math.min(7, h * 0.45) - 3 : h - Math.min(9, h * 0.6) * 0.7 - 1.5;
+  if (zHi - 1.5 >= 3 && sp.textStyle !== 'off' && opts.font) {
+    const contours = layoutText(opts.font, [sp.label || sp.brand], w - 8, zHi - 1.5, { maxLine: 10 });
+    if (contours) {
+      const depth = 0.6;
+      drawer = op(M, 'difference', drawer, textSolid(M, contours, depth + 0.3).rotate([90, 0, 0]).translate([0, yF + depth, (1.5 + zHi) / 2]));
+    }
+  }
+  if (opts.orient === 'print') drawer = drawer.translate([0, -cy, 0]);
+  return drawer;
+}
+
+// ---------- counting tray ----------
+
+/** Flat tray with raised edges, a pour spout at one front corner and optional 10 mm count lines. */
+function buildCounter(M, sp) {
+  const W = sp.W, D = sp.D, h = sp.trayWall, t = 1.6, fl = 1.6;
+  const L = 24, tw = 14, mouth = Math.min(40, W * 0.45);
+  const x0 = -W / 2, y0 = -D / 2;
+  let pts;
+  if (sp.spout === 'none') pts = [[x0, y0], [-x0, y0], [-x0, -y0], [x0, -y0]];
+  else pts = [[x0, -y0], [x0, y0 - L], [x0 + tw, y0 - L], [x0 + mouth, y0], [-x0, y0], [-x0, -y0]];
+  if (sp.spout === 'right') pts = pts.map(([x, y]) => [-x, y]).reverse();
+  // counter-clockwise for the cross-section
+  let area = 0;
+  for (let k = 0; k < pts.length; k++) { const [ax, ay] = pts[k], [bx, by] = pts[(k + 1) % pts.length]; area += ax * by - bx * ay; }
+  if (area < 0) pts.reverse();
+  const raw = new M.CrossSection([pts], 'NonZero');
+  const outline = raw.offset(-3, 'Round', 2, 32).offset(3, 'Round', 2, 32);
+  raw.delete();
+  const inner = outline.offset(-t, 'Round', 2, 32);
+  let tray = op(M, 'difference', outline.extrude(h), inner.extrude(h + 1).translate([0, 0, fl]));
+  // open the spout tip down to the floor so parts slide straight out
+  if (sp.spout !== 'none') {
+    const sx = sp.spout === 'right' ? -1 : 1;
+    const xa = sx * (x0 + t + 0.3), xb = sx * (x0 + tw - t - 0.3);
+    tray = op(M, 'difference', tray, box(M, Math.min(xa, xb), Math.max(xa, xb), y0 - L - 1, y0 - L + t + 1, fl, h + 1));
+  }
+  // count lines: a 10 mm grid engraved into the floor
+  if (sp.countLines) {
+    const lines = [];
+    const g = 10, lw = 0.6;
+    for (let x = -Math.floor(W / 2 / g) * g; x <= W / 2; x += g) lines.push(M.CrossSection.square([lw, D + 2 * L], true).translate([x, 0]));
+    for (let y = -Math.floor((D / 2 + L) / g) * g; y <= D / 2; y += g) lines.push(M.CrossSection.square([W + 2, lw], true).translate([0, y]));
+    const grid = M.CrossSection.union(lines);
+    lines.forEach((l) => l.delete());
+    const area2 = inner.offset(-2, 'Round', 2, 32);
+    const clipped = M.CrossSection.intersection(grid, area2);
+    grid.delete(); area2.delete();
+    tray = op(M, 'difference', tray, clipped.extrude(1).translate([0, 0, fl - 0.4]));
+    clipped.delete();
+  }
+  outline.delete();
+  inner.delete();
+  return tray;
+}
+
 // ---------- public API ----------
 
 /**
@@ -914,6 +1057,8 @@ export function buildPart(M, input, { segments = 10, font = null, orient = 'prin
     case 'holder': return buildHolder(M, sp, opts);
     case 'base': return buildBase(M, sp, opts);
     case 'caddy': return buildCaddy(M, sp, opts);
+    case 'counter': return buildCounter(M, sp, opts);
+    case 'drawer': return buildDrawer(M, sp, opts);
     default: return buildBin(M, sp, opts);
   }
 }
@@ -927,6 +1072,7 @@ export function placements(input) {
   if (sp.type === 'lid') return [[0, 0, sp.zs]];
   if (sp.type === 'tray') return [[0, 0, sp.trayZ]];
   if (sp.type === 'holder') return [[0, 0, sp.ribTop]];
+  if (sp.type === 'drawer') return sp.ledges.map((z) => [0, 0, z]);
   if (sp.type === 'cup') {
     const top = (sp.trayZ != null ? sp.trayZ - (STD.trayLedge - sp.wall) : sp.usableTop) - 0.4;
     const { a, b } = insertFootprint(sp, sp.ribTop, top);
@@ -940,10 +1086,15 @@ export function placements(input) {
 }
 
 /** How many to print by default (cups come as a set). */
-export const defaultQty = (input) => { const sp = resolveSpec(input); return sp.type === 'cup' ? sp.cupsX * sp.cupsY : 1; };
+export const defaultQty = (input) => {
+  const sp = resolveSpec(input);
+  return sp.type === 'cup' ? sp.cupsX * sp.cupsY : sp.type === 'drawer' ? sp.cabRows : 1;
+};
 
 /** The host box an insert or lid belongs to (for previews and "add the box" actions). */
-export const hostSpec = (input) => ({ ...input, type: 'box', trayDepth: input.type === 'tray' ? resolveSpec(input).trayDepth : input.trayDepth });
+export const hostSpec = (input) => (input.type === 'drawer'
+  ? { ...input, type: 'cabinet' }
+  : { ...input, type: 'box', trayDepth: input.type === 'tray' ? resolveSpec(input).trayDepth : input.trayDepth });
 
 /**
  * Rough load the floor carries in a stack before it sags ~1 mm (kg). The floor of a stacked bin is held

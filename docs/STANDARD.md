@@ -61,6 +61,9 @@ A lid fits every box with the same footprint, whatever the box's height.
 | **Holder** | Deck 3 mm thick (8 mm for hex bits) with support ribs every ~20 mm. It prints deck-down. |
 | **Base plate** | Flat bottom. One socket per stack: the stack's outline inset 1.2 mm and 5.3 mm deep, so feet seat exactly as on a bin. |
 | **Caddy** | Wells 1 mm larger than a 1×1 bin and 16 mm deep, with a 3 mm handle plate between the rows. |
+| **Drawer cabinet** | An AESS bin with its front open above the floor. Each side wall has one ledge per drawer: 2.5 mm deep, flat top, 45° underside. The first ledge sits 6.1 mm up, clear of the flare; the rest are evenly spaced up to 4.8 mm below the rim top. |
+| **Drawer** | Width = inner width − 0.8 mm (the rim counts as wall), depth = cabinet depth − back wall − 0.6 mm, height = ledge pitch − 3.9 mm. Flat bottom; the front is flush with the cabinet. |
+| **Counting tray** | Free-standing: grid footprint, 1.6 mm walls and floor. Its spout adds 24 mm at the front and opens to 14 mm at floor level. |
 
 Inserts are sized from a host box, so the same settings must go to the box and its inserts. The generator's “+ Add the box” does that.
 
@@ -87,7 +90,7 @@ Inserts are sized from a host box, so the same settings must go to the box and i
 
 ```
 AESS-<TYPE>-<size>[-G<grid>][-H<step>]-<WALL>[-OPEN]
-TYPE   HOP | BOX | LID | CUP | TRAY | HOLD | BASE | CADDY   (inserts name their host box)
+TYPE   HOP | BOX | LID | CUP | TRAY | HOLD | BASE | CADDY | CNT | CAB | DRW   (inserts name their host)
 size   grid: <nx>x<ny>x<nh>      exact: <W>x<D>x<H>MM  or  ...IN
 grid   tag present only when it differs from the system default (imperial always shows G…IN)
 WALL   LITE | STD | HEAVY | <mm>MM        lids have no wall tag; -S<snap> marks a non-standard lid snap
