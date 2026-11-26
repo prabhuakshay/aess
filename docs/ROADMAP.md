@@ -3,35 +3,38 @@
 AESS started as stackable storage for a hardware shop and grew into an open system. ✅ = shipped, 🔜 = next, 💡 = idea.
 
 ## Foundations
-- ✅ **Standard v1 (draft):**
-  - 42 mm grid and 7 mm height units.
-  - Snap-stack interface with a fixed 1.2 mm rim.
-  - Wall classes Lite, Standard and Heavy. See [STANDARD.md](STANDARD.md).
+- ✅ **Standard v2 (draft):**
+  - metric (Gridfinity grid) or imperial base units
+  - nesting stack interface
+  - slide-lock lids
+  - See [STANDARD.md](STANDARD.md).
 - ✅ **SolidCraft reference model** and CLI exporter.
 - ✅ **Browser generator:**
   - preview and stacked view
   - 3MF and STL downloads, plate export
   - presets and share links
-- 🔜 **Fit test confirmed** on a real print, which settles the default snap (0.5 / 0.6 / 0.7).
+- 🔜 **Fit test confirmed** on a real print, which settles the default lid snap (0.6 / 0.7 / 0.8).
+- 💡 **Gridfinity base option:** per-cell Gridfinity feet, so metric bins also lock into Gridfinity baseplates.
 
 ## Containers
 - ✅ **Hopper:** open-front pick bin, with an adjustable lip.
 - ✅ **Box:** closed bin.
-- ✅ **Lid:** snaps on and takes a bin on top.
-- 🔜 **Divider slots and dividers:**
-  - ribs on the box walls every 21 mm
-  - straight dividers
-  - a sloped "scoop" divider
+- ✅ **Slide lid:**
+  - click lock and a pinch tab
+  - zero added height
+  - optional hole pattern and brand
+- ✅ **Fixed dividers** (both directions) and a **front scoop**.
+- ✅ **Wall patterns** (diamond, hex, slots) to save filament.
+- 🔜 **Removable dividers:** slots in the walls and slide-in divider plates.
 - 🔜 **Half-grid cups (21 mm):** drop into a box; e.g. 8 cups for M3–M10 nuts in a 2×2 box.
 - 💡 **Tall tool bin** (nh 20+) for drill bits, screwdrivers and hacksaw blades.
 - 💡 **Long tray** presets (1×4, 1×5) for long bolts, hinges and threaded rod.
 - 💡 **Drawer mode:** printed corner posts plus plywood sides turn a stack of bins into a drawer cabinet.
 
 ## Closing and structure
-- 🔜 **Lid pull tab** and **label recess** on top.
+- ✅ **Lid pinch tab**, and the brand on lids.
 - 🔜 **Stack link clip:** ties neighbouring stacks together, so tall free-standing stacks don't tip.
 - 💡 **Hinged organizer case:** print-in-place hinge, snap latch, holds dividers.
-- 💡 **Sliding lid** for small bit boxes.
 - 💡 **Dust flap** for the hopper front.
 - 💡 **Base riser:** anti-slip feet with rubber-pad pockets.
 
@@ -47,7 +50,8 @@ AESS started as stackable storage for a hardware shop and grew into an open syst
 - 💡 **QR or index numbers** on labels, linked to a stock sheet.
 
 ## Generator
-- 💡 Embossed text labels on the front face.
-- 💡 Print-time estimates.
+- ✅ Engraved or raised brand and label text, and printable paper labels.
+- ✅ Filament, time and cost estimates, a library, undo/redo and a cut-away view.
+- 💡 Multi-colour 3MF (text as a separate part for the AMS).
 - 💡 A plate auto-packer that shows what fits on one A1 plate.
 - 💡 Offline / PWA install.

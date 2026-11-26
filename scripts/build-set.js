@@ -1,9 +1,12 @@
 // Build a list of AESS parts to 3MF/STL from the command line (no SolidCraft needed).
 // Usage: node scripts/build-set.js <list.txt> [outDir] [--stl] [--plate]
-//   list lines: <type> <nx> <ny> [nh] [wall] [qty]   e.g. "hopper 2 3 7 heavy 2"
+//   list lines: <type> <nx> <ny> [nh] [qty] [key=value ...]
+//   e.g. "hopper 2 3 7 2 wall=heavy label=M6x30"   "box 2 2 4 divX=2 divY=2"   "lid 2 2"
+//   Any spec key works (pattern=hex, scoop=10, brand=..., textStyle=off); use _ for spaces in values.
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import Module from 'manifold-3d';
+import { parse } from 'opentype.js/dist/opentype.mjs';
 import { buildPart, resolveSpec, toMesh, grams } from '../web/aess-core.js';
 import { make3MF, makeSTL } from '../web/aess-export.js';
 
@@ -21,19 +24,26 @@ function parseList(text) {
     const nums = p.slice(1).filter((x) => /^\d+$/.test(x)).map(Number);
     const words = p.slice(1).filter((x) => !/^\d+$/.test(x));
     const [nx, ny, nh = 1, qty = 1] = nums;
-    return { spec: { type: p[0], nx, ny, nh, wall: words[0] ?? 'std' }, qty };
+    const spec = { type: p[0], nx, ny, nh };
+    for (const w of words) {
+      const [k, v] = w.includes('=') ? w.split('=') : ['wall', w];
+      spec[k] = /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : v === 'true' ? true : v === 'false' ? false : v.replace(/_/g, ' ');
+    }
+    return { spec, qty };
   });
 }
 
 const M = await Module();
 M.setup();
+const fontBuf = await readFile(new URL('../web/fonts/BarlowCondensed-Bold.ttf', import.meta.url));
+const font = parse(fontBuf.buffer.slice(fontBuf.byteOffset, fontBuf.byteOffset + fontBuf.byteLength));
 await mkdir(outDir, { recursive: true });
 const items = parseList(await readFile(listPath, 'utf8'));
 const plate = [];
 let total = 0;
 for (const { spec, qty } of items) {
   const sp = resolveSpec(spec);
-  const part = buildPart(M, spec, { segments: 16 });
+  const part = buildPart(M, spec, { segments: 16, font });
   const vol = part.volume();
   const mesh = toMesh(part);
   part.delete();

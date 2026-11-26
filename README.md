@@ -4,7 +4,7 @@
 
 # AESS
 
-**Snap-stacking storage bins on a 42 mm grid. Generate any size in your browser, then print.**
+**Stackable storage bins with slide-lock lids, on a 42 mm (Gridfinity) or inch grid. Generate any size in your browser, then print.**
 
 [![CI](https://github.com/prabhuakshay/aess/actions/workflows/ci.yml/badge.svg)](https://github.com/prabhuakshay/aess/actions/workflows/ci.yml)
 [![Pages](https://github.com/prabhuakshay/aess/actions/workflows/pages.yml/badge.svg)](https://prabhuakshay.github.io/aess/)
@@ -16,31 +16,45 @@
 
 ---
 
-AESS started as storage for a hardware shop: screws, nuts, anchors and fittings, stacked on desks, counters, shelves or the floor. Every part shares one interface, so **any bin stacks on any other and clicks into place**. Stacks don't topple, and nothing needs a wall or a shelf.
+AESS started as storage for a hardware shop: screws, nuts, anchors and fittings, stacked on desks, counters, shelves or the floor. Every part shares one stacking interface, so **any bin nests securely on any other bin with the same footprint**.
 
 - **Hoppers:** open-front pick bins. Stack them into a wall and grab parts from the front.
-- **Boxes:** closed bins for anything that shouldn't spill.
-- **Lids:** snap onto any box of the same footprint. A lid also takes another bin on top.
-- **Built for printing:** fast, low-filament parts. No supports, no infill, and three wall weights.
+- **Boxes:** closed bins with built-in rails for a slide lid.
+- **Slide lids:** a 1.2 mm plate that slides in and clicks shut. It adds **no height**, so lidded boxes still stack. Pull it out by the pinch tab.
+- **Configurable:**
+  - wall weights, floor thickness
+  - wall patterns that save filament
+  - dividers and a front scoop
+  - engraved or raised branding plus a label line
+  - metric or imperial grid
+- **Built for printing:** no supports, no infill.
 
 ## Use the generator
 
 1. Open **[prabhuakshay.github.io/aess](https://prabhuakshay.github.io/aess/)**.
-2. Pick a part, click a footprint on the 6×6 grid, and set the height.
-3. **Download 3MF** (or STL). To print several parts at once, **Add to plate**, then download the whole plate as one 3MF.
+2. Pick a part, click a footprint on the grid, and set the height. Every setting has an ⓘ explaining it.
+3. **Download 3MF** (or STL). To print several parts at once, **Add to plate**, then download the whole plate as one 3MF, a zip of STLs or printable paper labels.
 
-Everything runs in your browser. Nothing is uploaded. Each part can be shared as a link.
+Everything runs in your browser. Nothing is uploaded.
 
-**Print the fit test first** (*Load a preset → Fit test*, ~13 g). Then read [docs/PRINTING.md](docs/PRINTING.md).
+Other conveniences:
+- undo/redo, keyboard shortcuts and a saved-parts library
+- a cut-away view, with the lid shown in place
+- filament, time and cost estimates
+- share links for any part
+
+**Print the fit test first** (*Add a preset → Fit test*, ~10 g). Then read [docs/PRINTING.md](docs/PRINTING.md).
 
 ## The standard in one table
 
 | | |
 |---|---|
-| Footprint | `n × 42 mm − 0.5`, 1–6 units each way (fits a 256 mm bed) |
-| Height | `nh × 7 mm + 4.3`. Each part adds exactly `nh × 7` to a stack |
-| Interface | 4 mm foot, 45° flare, 1.2 mm rim, 0.6 mm snap bead and groove |
-| Walls | Lite 0.8 · Standard 1.2 · Heavy 1.4 mm |
+| Grid | Metric: 42 mm × 7 mm steps (Gridfinity grid). Imperial: 1½″ × ¼″ steps. Or any exact size |
+| Footprint | `n × grid − 0.5 mm` |
+| Height | `units × step + 4.3 mm`. Each part adds exactly `units × step` to a stack |
+| Stacking | 4 mm foot, 45° flare, fixed 1.2 mm rim; 0.3 mm play |
+| Slide lid | 1.2 mm plate 7.1 mm below the rim; click lock; adds no height |
+| Walls | Lite 0.8 · Standard 1.2 · Heavy 1.6 mm |
 
 Full specification: [docs/STANDARD.md](docs/STANDARD.md). Ideas and planned parts: [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -50,6 +64,7 @@ Full specification: [docs/STANDARD.md](docs/STANDARD.md). Ideas and planned part
 web/          the generator: static site, deployed to GitHub Pages
   aess-core.js    geometry for every part (Manifold kernel)
   aess-export.js  3MF / STL / ZIP writers (no dependencies)
+  fonts/          Barlow Condensed Bold (SIL OFL) for engraved text
 cad/          aess_master.sc: the SolidCraft reference model
 solidcraft/   aess_gen.py: export any size from the CAD master via solidcraft-cli
 scripts/      build-set.js (batch export with Node), serve.js (local server)
@@ -74,7 +89,8 @@ npm run build:set -- sets/starter.txt out/ --stl
 How the pieces fit together:
 - **Reference model.** `cad/aess_master.sc` (SolidCraft) defines the standard.
 - **Browser geometry.** `web/aess-core.js` rebuilds the same shapes with [Manifold](https://github.com/elalish/manifold), loaded from a CDN at a pinned version.
-- **Drift check.** `test/core.test.js` compares the two models' volumes for ten parts, and CI fails if they differ by more than 0.5 %.
+- **Drift check.** `test/core.test.js` compares the two models' volumes for eleven parts, and CI fails if they differ by more than 0.5 %.
+- **Collision checks.** The tests also prove that every lid fits its box, and that a bin stacked on a lidded box touches neither the lid nor the box.
 
 **CI and releases** (`.github/workflows/`):
 - **ci.yml:** every push and pull request runs lint, the geometry tests and the browser smoke test, and builds the starter set.
@@ -87,4 +103,4 @@ New part types (dividers, cups, label clips…), fixes and print reports are wel
 
 ## License
 
-[MIT](LICENSE): the code, the CAD model and every file the generators produce.
+[MIT](LICENSE): the code, the CAD model and every file the generators produce. The bundled font is Barlow Condensed, under the [SIL Open Font License](web/fonts/OFL.txt).

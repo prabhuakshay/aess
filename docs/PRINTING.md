@@ -7,20 +7,21 @@ Tuned for a Bambu Lab A1 (256 mm bed). Any 0.4 mm FDM printer works.
 |---|---|
 | Nozzle | 0.4 mm |
 | Layer height | 0.2 mm (0.28 mm for speed) |
-| Wall loops | 2 for Lite, 3 for Standard and Heavy |
+| Wall loops | 2 for Lite, 3 for Standard, 4 for Heavy |
 | Infill | 0 % (the walls are the part) |
 | Top / bottom shells | enough to fill the floor (the defaults are fine) |
 | Supports | none |
-| Orientation | as exported: foot down |
+| Orientation | as exported: bins foot down, lids flat (the plate on the bed) |
 | Material | PLA for storage; PETG for lids that get opened all day (it flexes rather than cracks) |
 
 ## Fit test first
-Print `AESS-BOX-1x1x3-STD` and `AESS-LID-1x1-STD` (about 13 g; *Load a preset → Fit test* in the generator).
-- **Clicks on, pulls off by hand:** keep *Standard* (0.6).
-- **Too hard to press or remove:** use *Looser* (0.5).
-- **Falls off or rattles:** use *Tighter* (0.7).
+Print `AESS-BOX-1x1x3-STD` and `AESS-LID-1x1` (about 10 g; *Add a preset → Fit test* in the generator). Slide the lid in.
+- **Clicks shut at the end and pulls out with the tab:** keep *Standard* (0.7).
+- **Hard to push in or pull out:** use *Looser* (0.6).
+- **Slides out on its own:** use *Tighter* (0.8).
 
-Every part you print from then on uses the same setting. Mixing settings works, but the fit falls between them.
+The lid snap is set on the **box** (the notch depth) and the **lid** (the bump), so use the same setting for both.
+Stacking needs no tuning. If bins jam together, your printer over-extrudes, or the first layer is squished: keep the elephant-foot chamfer on.
 
 ## Bambu Studio tips
 - **Plate files:** open the 3MF and press **A** to auto-arrange.

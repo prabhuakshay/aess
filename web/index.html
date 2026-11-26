@@ -6,12 +6,12 @@
   <title>AESS Bin Generator</title>
   <meta name="theme-color" content="#d97706">
   <meta property="og:title" content="AESS Bin Generator">
-  <meta property="og:description" content="Snap-stacking 3D-printable bins on a 42 mm grid. Pick a size, download a 3MF, print.">
-  <meta name="description" content="Generate snap-stacking 3D-printable storage bins on a 42 mm grid. Hoppers, boxes and lids, ready for your slicer.">
+  <meta property="og:description" content="Stackable 3D-printable bins with slide-lock lids. Pick a size, download a 3MF, print.">
+  <meta name="description" content="Generate stackable 3D-printable storage bins with slide-lock lids. Hoppers, boxes, lids, dividers, wall patterns and engraved labels, ready for your slicer.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">
   {
@@ -26,10 +26,20 @@
   <header class="topbar">
     <a class="brand" href="./">
       <img src="favicon.svg" alt="" width="28" height="28">
-      <span><strong>AESS</strong> Bin Generator</span>
+      <span><strong>AESS</strong> <span class="brand-sub">Bin Generator</span></span>
     </a>
     <nav class="topnav">
-      <button class="linkbtn" id="aboutBtn" type="button">The standard</button>
+      <button class="iconbtn flat" id="undoBtn" type="button" title="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+      <button class="iconbtn flat" id="redoBtn" type="button" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+      <span class="sep"></span>
+      <div class="unitswitch" role="radiogroup" aria-label="Measurement system" data-tip="Switches the whole system: metric uses the 42 × 7 mm Gridfinity grid; imperial uses an inch grid with 1/4-inch height steps.">
+        <button type="button" data-units="mm" role="radio">mm</button><button type="button" data-units="in" role="radio">in</button>
+      </div>
+      <button class="iconbtn flat" id="themeBtn" type="button" title="Light / dark" aria-label="Toggle theme"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+      <button class="iconbtn flat" id="settingsBtn" type="button" title="Filament price and settings" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <span class="sep"></span>
+      <button class="linkbtn" id="libraryBtn" type="button">Library</button>
+      <button class="linkbtn" id="aboutBtn" type="button">Guide</button>
       <a class="linkbtn" id="repoLink" href="#" target="_blank" rel="noopener">GitHub</a>
     </nav>
   </header>
@@ -38,139 +48,289 @@
     <section class="viewer" aria-label="3D preview">
       <canvas id="view"></canvas>
       <div class="viewer-hud">
-        <div class="hud-name" id="hudName">AESS-HOP-2x3x7-STD</div>
-        <div class="hud-dims" id="hudDims">83.5 × 125.5 × 53.3 mm</div>
+        <div class="hud-name" id="hudName">—</div>
+        <div class="hud-dims" id="hudDims"></div>
+        <ul class="hud-warn" id="hudWarn"></ul>
       </div>
       <div class="viewer-tools">
-        <label class="toggle"><input type="checkbox" id="stackToggle"> <span>Show stacked ×3</span></label>
-        <button class="iconbtn" id="resetView" type="button" title="Reset view" aria-label="Reset view">
-          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
+        <label class="toggle" id="lidToggleWrap" data-tip="Show the slide lid in place on this box."><input type="checkbox" id="lidToggle" checked> <span>Lid</span></label>
+        <label class="toggle" data-tip="Preview three of these stacked, to check how they nest."><input type="checkbox" id="stackToggle"> <span>Stack ×3</span></label>
+        <label class="toggle" data-tip="Cut the preview in half to see walls, floor, rails and dividers from inside."><input type="checkbox" id="sectionToggle"> <span>Cut-away</span></label>
+        <label class="toggle" data-tip="Slowly turn the model."><input type="checkbox" id="spinToggle"> <span>Spin</span></label>
+        <button class="iconbtn" id="shotBtn" type="button" title="Save a picture (PNG)" aria-label="Save picture"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+        <button class="iconbtn" id="resetView" type="button" title="Reset view" aria-label="Reset view"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg></button>
       </div>
+      <input type="range" id="sectionPos" class="section-slider" min="-50" max="50" value="0" aria-label="Cut-away position" hidden>
       <div class="viewer-status" id="status" hidden>Loading geometry engine…</div>
+      <div class="viewer-busy" id="busy" hidden><span></span></div>
     </section>
 
-    <aside class="panel">
-      <div class="group">
-        <div class="group-title">Part</div>
+    <aside class="panel" id="panel">
+      <section class="sec" data-sec="part">
         <div class="typecards" role="radiogroup" aria-label="Part type">
-          <button class="typecard" data-type="hopper" role="radio">
-            <svg viewBox="0 0 48 40"><path d="M6 8v26h36V8M6 8l6 0M36 8h6M12 8v8h24V8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M12 22h24" stroke="currentColor" stroke-width="2" opacity=".35"/></svg>
-            <span class="tc-name">Hopper</span><span class="tc-sub">open front, pick bin</span>
+          <button class="typecard" data-type="hopper" role="radio" data-tip="Open-front pick bin. Stack them into a wall and grab parts from the front without unstacking. Shortcut: 1">
+            <svg viewBox="0 0 48 40"><path d="M6 8v26h36V8M12 8v8h24V8"/></svg>
+            <span class="tc-name">Hopper</span><span class="tc-sub">open-front pick bin</span>
           </button>
-          <button class="typecard" data-type="box" role="radio">
-            <svg viewBox="0 0 48 40"><path d="M6 6v28h36V6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M6 6h36" stroke="currentColor" stroke-width="2" opacity=".35"/></svg>
-            <span class="tc-name">Box</span><span class="tc-sub">closed, takes a lid</span>
+          <button class="typecard" data-type="box" role="radio" data-tip="Closed bin. With rails on, it takes a slide lid and still stacks with the lid in. Shortcut: 2">
+            <svg viewBox="0 0 48 40"><path d="M6 6v28h36V6"/><path d="M8 11h32" class="thin"/></svg>
+            <span class="tc-name">Box</span><span class="tc-sub">closed, slide lid</span>
           </button>
-          <button class="typecard" data-type="lid" role="radio">
-            <svg viewBox="0 0 48 40"><path d="M6 18v10h36V18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M9 28v4h30v-4" fill="none" stroke="currentColor" stroke-width="2" opacity=".5"/></svg>
-            <span class="tc-name">Lid</span><span class="tc-sub">snaps on, stackable</span>
+          <button class="typecard" data-type="lid" role="radio" data-tip="A thin lid that slides into a box's rails and clicks shut. It adds no height, so lidded boxes stack. Shortcut: 3">
+            <svg viewBox="0 0 48 40"><path d="M4 20h40"/><path d="M4 20v-6M36 20h8M30 26l6-6-6-6" class="thin"/></svg>
+            <span class="tc-name">Slide lid</span><span class="tc-sub">snap-lock, 0 height</span>
           </button>
         </div>
-      </div>
+      </section>
 
-      <div class="group">
-        <div class="group-title">Footprint <span class="muted" id="fpReadout">2 × 3 · 83.5 × 125.5 mm</span></div>
-        <div class="fp-wrap">
-          <div class="fp-grid" id="fpGrid" aria-label="Pick a footprint in 42 mm grid units"></div>
-          <div class="fp-steppers">
-            <label>Width <span class="stepper"><button type="button" data-step="nx:-1" aria-label="Narrower">−</button><output id="nxOut">2</output><button type="button" data-step="nx:1" aria-label="Wider">+</button></span></label>
-            <label>Depth <span class="stepper"><button type="button" data-step="ny:-1" aria-label="Shallower">−</button><output id="nyOut">3</output><button type="button" data-step="ny:1" aria-label="Deeper">+</button></span></label>
-            <p class="hint">1 unit = 42 mm. Click a cell to set width × depth.</p>
+      <details class="sec" open data-sec="size">
+        <summary>Size <span class="muted" id="sizeReadout"></span></summary>
+        <div class="row">
+          <div class="seg seg2" id="modeSeg" role="radiogroup" aria-label="Sizing mode">
+            <button data-mode="grid" role="radio">Grid units</button>
+            <button data-mode="custom" role="radio">Exact size</button>
+          </div>
+          <button class="tip" type="button" data-tip="Grid units: sizes are whole multiples of the grid, so bins line up and stack neatly. Exact size: type any outer size in whole millimetres (or inches)."></button>
+        </div>
+
+        <div id="gridBox">
+          <div class="two">
+            <div class="field">
+              <label for="gridSel">Grid <button class="tip" type="button" data-tip="The footprint step. Metric uses the 42 mm Gridfinity grid; imperial uses inches. Bins only stack on bins with the same footprint, so pick one grid and stick with it."></button></label>
+              <select id="gridSel"></select>
+              <input type="number" id="gridCustom" aria-label="Custom grid size" hidden>
+            </div>
+            <div class="field">
+              <label for="huSel">Height step <button class="tip" type="button" data-tip="The size of one height unit. Metric: 7 mm (Gridfinity). Imperial: 1/4 inch. Every bin adds exactly units × step to a stack."></button></label>
+              <select id="huSel"></select>
+              <input type="number" id="huCustom" aria-label="Custom height step" hidden>
+            </div>
+          </div>
+          <div class="fp-wrap">
+            <div class="fp-grid" id="fpGrid" aria-label="Footprint picker"></div>
+            <div class="fp-steppers">
+              <label>Width <span class="stepper"><button type="button" data-step="nx:-1" aria-label="Narrower">−</button><output id="nxOut">2</output><button type="button" data-step="nx:1" aria-label="Wider">+</button></span></label>
+              <label>Depth <span class="stepper"><button type="button" data-step="ny:-1" aria-label="Shallower">−</button><output id="nyOut">3</output><button type="button" data-step="ny:1" aria-label="Deeper">+</button></span></label>
+              <label id="nhRow">Height <span class="stepper"><button type="button" data-step="nh:-1" aria-label="Lower">−</button><output id="nhOut">7</output><button type="button" data-step="nh:1" aria-label="Taller">+</button></span></label>
+            </div>
+          </div>
+          <div class="field" id="nhField">
+            <label for="nh">Height units <span class="muted" id="hReadout"></span> <button class="tip" type="button" data-tip="Every whole unit works (1, 2, 3, 4 …). Each unit adds exactly one height step to a stack, so a 3-unit bin on a 4-unit bin stands as tall as one 7-unit bin."></button></label>
+            <input type="range" id="nh" min="1" max="35" step="1" value="7">
           </div>
         </div>
-      </div>
 
-      <div class="group" id="heightGroup">
-        <div class="group-title">Height <span class="muted" id="hReadout">7 units · 53.3 mm</span></div>
-        <input type="range" id="nh" min="1" max="35" step="1" value="7" aria-label="Height in 7 mm units">
-        <div class="chips" id="hChips"></div>
-        <p class="hint">Each unit is 7 mm of stack height. A 3-unit bin on a 4-unit bin stands exactly as tall as one 7-unit bin.</p>
-      </div>
-
-      <div class="group" id="frontGroup">
-        <div class="group-title">Front lip <span class="muted" id="frontReadout">40% · 21.3 mm</span></div>
-        <input type="range" id="front" min="15" max="90" step="5" value="40" aria-label="Hopper front lip height">
-      </div>
-
-      <div class="group">
-        <div class="group-title">Wall</div>
-        <div class="seg" id="wallSeg" role="radiogroup" aria-label="Wall thickness">
-          <button data-wall="lite" role="radio"><b>Lite</b><small>0.8 mm</small></button>
-          <button data-wall="std" role="radio"><b>Standard</b><small>1.2 mm</small></button>
-          <button data-wall="heavy" role="radio"><b>Heavy</b><small>1.4 mm</small></button>
+        <div id="customBox" hidden>
+          <div class="dims">
+            <label>Width <input type="number" id="cW" min="24" max="400" step="1"><span class="unit"></span></label>
+            <label>Depth <input type="number" id="cD" min="24" max="400" step="1"><span class="unit"></span></label>
+            <label id="cHRow">Height <input type="number" id="cH" min="11" max="400" step="1"><span class="unit"></span></label>
+          </div>
+          <p class="hint">Outer sizes. Only parts with exactly the same width and depth stack on each other.</p>
         </div>
-      </div>
+      </details>
 
-      <div class="group">
-        <div class="group-title">Snap fit</div>
-        <div class="seg" id="fitSeg" role="radiogroup" aria-label="Snap fit">
-          <button data-fit="0.5" role="radio"><b>Looser</b><small>0.5</small></button>
-          <button data-fit="0.6" role="radio"><b>Standard</b><small>0.6</small></button>
-          <button data-fit="0.7" role="radio"><b>Tighter</b><small>0.7</small></button>
+      <details class="sec" open data-sec="walls">
+        <summary>Walls &amp; floor <span class="muted" id="wallsReadout"></span></summary>
+        <div class="field">
+          <label>Wall <button class="tip" type="button" data-tip="Side and floor thickness. Lite (2 lines) for washers and light parts; Standard (3 lines) for screws; Heavy (4 lines) for bolts and tools. The stacking rim is always 1.2 mm, so every class stacks with every other."></button></label>
+          <div class="seg" id="wallSeg" role="radiogroup" aria-label="Wall thickness">
+            <button data-wall="lite" role="radio"><b>Lite</b><small>0.8 mm</small></button>
+            <button data-wall="std" role="radio"><b>Standard</b><small>1.2 mm</small></button>
+            <button data-wall="heavy" role="radio"><b>Heavy</b><small>1.6 mm</small></button>
+          </div>
         </div>
-        <p class="hint">Print the 1×1 fit test once and pick what clicks best on your printer.</p>
-      </div>
+        <div class="field">
+          <label for="floor">Floor <span class="muted" id="floorReadout"></span> <button class="tip" type="button" data-tip="Floor thickness, separate from the walls. Go thicker for heavy bolts or when the bin slides on a rough counter."></button></label>
+          <input type="range" id="floor" min="0.8" max="3" step="0.2" value="1.2">
+        </div>
+        <div class="field">
+          <label>Wall pattern <button class="tip" type="button" data-tip="Cut-outs in the side and back walls that save filament and print time. Every hole has a 45° pointed top, so no supports are needed. Small screws can fall through big holes: keep holes smaller than your smallest part."></button></label>
+          <div class="seg seg4" id="patternSeg" role="radiogroup" aria-label="Wall pattern">
+            <button data-pattern="none" role="radio">Solid</button>
+            <button data-pattern="diamond" role="radio">Diamond</button>
+            <button data-pattern="hex" role="radio">Hex</button>
+            <button data-pattern="slots" role="radio">Slots</button>
+          </div>
+        </div>
+        <div class="two" id="patternOpts">
+          <div class="field">
+            <label for="hole">Hole <span class="muted" id="holeReadout"></span> <button class="tip" type="button" data-tip="Size of each hole. Smaller holes keep small parts in; bigger holes save more filament."></button></label>
+            <input type="range" id="hole" min="3" max="16" step="0.5" value="6">
+          </div>
+          <div class="field">
+            <label for="bar">Bars <span class="muted" id="barReadout"></span> <button class="tip" type="button" data-tip="Width of the plastic between holes. Wider bars are stronger."></button></label>
+            <input type="range" id="bar" min="1.2" max="6" step="0.2" value="2.4">
+          </div>
+        </div>
+        <label class="check" data-tip="Bevels the bottom edge by 0.4 mm so the first layer's squish (elephant foot) doesn't make the foot too wide to nest.">
+          <input type="checkbox" id="chamfer" checked> Elephant-foot chamfer <button class="tip" type="button" data-tip="Bevels the bottom edge by 0.4 mm so the first layer's squish (elephant foot) doesn't make the foot too wide to nest."></button>
+        </label>
+      </details>
+
+      <details class="sec" open data-sec="inside">
+        <summary>Inside <span class="muted" id="insideReadout"></span></summary>
+        <div class="two">
+          <label class="stepfield">Dividers ↔ <button class="tip" type="button" data-tip="Walls that split the width into compartments (left to right). 2 dividers = 3 compartments."></button>
+            <span class="stepper"><button type="button" data-step="divX:-1" aria-label="Fewer">−</button><output id="divXOut">0</output><button type="button" data-step="divX:1" aria-label="More">+</button></span></label>
+          <label class="stepfield">Dividers ↕ <button class="tip" type="button" data-tip="Walls that split the depth into compartments (front to back). On a hopper, they hide the back compartments behind the front ones."></button>
+            <span class="stepper"><button type="button" data-step="divY:-1" aria-label="Fewer">−</button><output id="divYOut">0</output><button type="button" data-step="divY:1" aria-label="More">+</button></span></label>
+        </div>
+        <div class="field">
+          <label for="scoop">Scoop <span class="muted" id="scoopReadout"></span> <button class="tip" type="button" data-tip="A 45° ramp inside the front wall, so you can slide small parts out with a finger instead of digging into a corner."></button></label>
+          <input type="range" id="scoop" min="0" max="25" step="1" value="0">
+        </div>
+      </details>
+
+      <details class="sec" open data-sec="front">
+        <summary>Front &amp; branding</summary>
+        <div class="field" id="frontField">
+          <label for="front">Front lip <span class="muted" id="frontReadout"></span> <button class="tip" type="button" data-tip="Height of the hopper's front wall. Lower is easier to reach into; higher holds more and leaves more room for text."></button></label>
+          <input type="range" id="front" min="15" max="90" step="5" value="40">
+        </div>
+        <div class="field">
+          <label for="brandIn">Brand <button class="tip" type="button" data-tip="Printed on the front of every bin and on lids. Auto-sized to the space available. Clear it to leave the front plain."></button></label>
+          <input type="text" id="brandIn" maxlength="40" placeholder="Brand name" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="labelIn">Label <button class="tip" type="button" data-tip="Optional second line, larger than the brand: what's inside, e.g. M6 × 30 or Wall plugs 8 mm."></button></label>
+          <input type="text" id="labelIn" maxlength="40" placeholder="e.g. M6 × 30" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Text style <button class="tip" type="button" data-tip="Engraved cuts the text into the wall (cleanest print). Raised stands 0.6 mm proud: easier to colour with a marker, or to swap filament for (needs an AMS colour change)."></button></label>
+          <div class="seg" id="textSeg" role="radiogroup" aria-label="Text style">
+            <button data-text="engrave" role="radio">Engraved</button>
+            <button data-text="raise" role="radio">Raised</button>
+            <button data-text="off" role="radio">Off</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="sec" open data-sec="lid" id="lidSec">
+        <summary>Slide lid</summary>
+        <label class="check" id="railsRow">
+          <input type="checkbox" id="rails" checked> Lid rails in the box <button class="tip" type="button" data-tip="Adds a ledge and lip inside the top of the box for the slide lid. The lid sits below where the next bin's foot goes, so lidded boxes still stack. Turn off for an open-top box."></button>
+        </label>
+        <div class="field">
+          <label>Lid snap <button class="tip" type="button" data-tip="How firmly the lid clicks shut: bumps on the lid click into notches in the box walls. Set it the same on the box and its lid. Print the 1×1 fit test once to find your printer's sweet spot."></button></label>
+          <div class="seg" id="snapSeg" role="radiogroup" aria-label="Lid snap">
+            <button data-snap="0.6" role="radio"><b>Looser</b><small>0.6</small></button>
+            <button data-snap="0.7" role="radio"><b>Standard</b><small>0.7</small></button>
+            <button data-snap="0.8" role="radio"><b>Tighter</b><small>0.8</small></button>
+          </div>
+        </div>
+        <div class="field" id="lidPullField">
+          <label>Pull <button class="tip" type="button" data-tip="Pinch tab: a small fin on the lid's front to grip between thumb and finger and pull the lid out. It sticks out 8 mm, so leave room in front. Finger notch: a scoop in the front edge instead, flush with the box."></button></label>
+          <div class="seg seg2" id="pullSeg" role="radiogroup" aria-label="Lid pull">
+            <button data-pull="tab" role="radio">Pinch tab</button>
+            <button data-pull="notch" role="radio">Finger notch</button>
+          </div>
+        </div>
+        <div class="field" id="lidPatternField">
+          <label>Lid pattern <button class="tip" type="button" data-tip="Holes in the lid plate to save filament. Fine for keeping things in; use Solid to keep dust out."></button></label>
+          <div class="seg" id="lidPatternSeg" role="radiogroup" aria-label="Lid pattern">
+            <button data-lidpattern="none" role="radio">Solid</button>
+            <button data-lidpattern="diamond" role="radio">Diamond</button>
+            <button data-lidpattern="hex" role="radio">Hex</button>
+          </div>
+        </div>
+        <label class="check" id="lidBrandRow">
+          <input type="checkbox" id="lidBrand" checked> Brand on the lid <button class="tip" type="button" data-tip="Raised brand text on top of the lid (solid lids only)."></button>
+        </label>
+      </details>
 
       <div class="stats" aria-live="polite">
-        <div><span class="k">Filament</span><span class="v" id="statGrams">—</span></div>
-        <div><span class="k">Length</span><span class="v" id="statMetres">—</span></div>
-        <div><span class="k">Volume</span><span class="v" id="statVol">—</span></div>
+        <div data-tip="Filament for this part, from its volume (0% infill, as printed)."><span class="k">Filament</span><span class="v" id="statGrams">—</span></div>
+        <div data-tip="Rough Bambu A1 print time at 0.2 mm layers. Your slicer will give the exact time."><span class="k">Time ≈</span><span class="v" id="statTime">—</span></div>
+        <div data-tip="Filament cost at your price per kg (set it under ⚙)."><span class="k">Cost</span><span class="v" id="statCost">—</span></div>
+        <div data-tip="How many fit on one 256 × 256 mm A1 plate."><span class="k">Per plate</span><span class="v" id="statPlate">—</span></div>
       </div>
 
       <div class="actions">
-        <button class="btn primary" id="dl3mf" type="button">Download 3MF</button>
+        <button class="btn primary" id="dl3mf" type="button" title="Ctrl+S">Download 3MF</button>
         <button class="btn" id="dlStl" type="button">STL</button>
       </div>
       <div class="actions">
         <button class="btn ghost" id="addPlate" type="button">+ Add to plate</button>
-        <button class="btn ghost" id="addLid" type="button">+ Add matching lid</button>
+        <button class="btn ghost" id="addLid" type="button">+ Add its lid</button>
+        <button class="btn ghost small-icon" id="saveLib" type="button" title="Save to library" aria-label="Save to library">★</button>
       </div>
 
-      <div class="group plate">
-        <div class="group-title">Plate <span class="muted" id="plateTotal">empty</span></div>
+      <section class="sec plate">
+        <div class="sec-title">Plate <span class="muted" id="plateTotal">empty</span> <button class="tip" type="button" data-tip="Collect parts here and download them as one 3MF (each part its own object; press A in Bambu Studio to arrange) or as a zip of STLs. Saved in this browser."></button></div>
         <ul class="plate-list" id="plateList"></ul>
         <div class="preset-row">
           <select id="presetSel" aria-label="Load a preset set">
-            <option value="">Load a preset…</option>
+            <option value="">Add a preset…</option>
             <option value="fit">Fit test (1×1 box + lid)</option>
-            <option value="starter">Starter set (12 parts)</option>
+            <option value="starter">Starter set</option>
             <option value="screws">Screw wall (6 hoppers)</option>
+            <option value="nuts">Nut organizer (2×2 box, 3×3 grid + lid)</option>
           </select>
           <button class="btn small ghost" id="clearPlate" type="button">Clear</button>
         </div>
         <div class="actions">
-          <button class="btn primary" id="dlPlate" type="button" disabled>Download plate (.3mf)</button>
-          <button class="btn" id="dlZip" type="button" disabled>All as STL (.zip)</button>
+          <button class="btn primary" id="dlPlate" type="button" disabled>Plate (.3mf)</button>
+          <button class="btn" id="dlZip" type="button" disabled>STLs (.zip)</button>
+          <button class="btn" id="printLabels" type="button" disabled title="Print paper labels for every part on the plate">Labels</button>
         </div>
-        <p class="hint" id="plateHint">The plate goes into one 3MF with every part as its own object. In Bambu Studio press <kbd>A</kbd> to auto-arrange.</p>
-      </div>
+      </section>
 
-      <div class="share">
-        <button class="btn small ghost" id="copyLink" type="button">Copy link to this part</button>
+      <div class="footer-actions">
+        <button class="btn small ghost" id="copyLink" type="button">Copy link</button>
+        <button class="btn small ghost" id="resetAll" type="button">Reset to defaults</button>
       </div>
     </aside>
   </main>
 
   <dialog id="about">
     <form method="dialog" class="dlg">
-      <h2>The AESS standard</h2>
-      <p>Every AESS part follows the same rules, so anything stacks and snaps onto anything else.</p>
+      <h2>How AESS works</h2>
+      <p>Every part shares one stacking interface, so anything stacks on anything with the same footprint.</p>
       <table>
-        <tr><th>Footprint</th><td><code>n × 42 mm − 0.5</code>, 1–6 units each way</td></tr>
-        <tr><th>Height</th><td><code>nh × 7 mm + 4.3</code>; each bin adds exactly <code>nh × 7</code> to a stack</td></tr>
-        <tr><th>Lid</th><td>The same part at nh = 1: snaps on and takes another bin on top</td></tr>
-        <tr><th>Foot</th><td>4 mm deep with a 45° flare, so no supports</td></tr>
-        <tr><th>Rim</th><td>Always 1.2 mm in the snap zone, whatever the wall</td></tr>
-        <tr><th>Snap</th><td>0.6 mm bead on the foot, 0.4 mm groove inside the rim</td></tr>
-        <tr><th>Walls</th><td>Lite 0.8 · Standard 1.2 · Heavy 1.4 mm</td></tr>
+        <tr><th>Footprint</th><td><code>n × grid − 0.5 mm</code> (grid 42 mm by default), or any exact size</td></tr>
+        <tr><th>Height</th><td><code>units × step + 4.3 mm</code>; each bin adds exactly <code>units × step</code> to a stack</td></tr>
+        <tr><th>Stacking</th><td>A 4 mm foot drops into the bin below with 0.3 mm play. Secure, with no clicking needed</td></tr>
+        <tr><th>Slide lid</th><td>1.2 mm plate in rails 7.1 mm below the rim; bumps click into wall notches. Adds no height: lidded boxes still stack</td></tr>
+        <tr><th>Walls</th><td>Lite 0.8 · Standard 1.2 · Heavy 1.6 mm; the rim is always 1.2 mm</td></tr>
       </table>
       <h3>Print settings</h3>
-      <p>0.4 mm nozzle, 0.2 mm layers (0.28 for speed). 2 wall loops for Lite, 3 for Standard and Heavy. 0% infill, no supports. Print it as exported: foot down.</p>
+      <p>0.4 mm nozzle, 0.2 mm layers (0.28 for speed). Wall loops: 2 for Lite, 3 for Standard, 4 for Heavy. 0% infill, no supports, foot down as exported. Print the lid flat as exported.</p>
+      <h3>Shortcuts</h3>
+      <p><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> part type · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo · <kbd>Ctrl</kbd>+<kbd>S</kbd> download 3MF · <kbd>L</kbd> lid · <kbd>X</kbd> cut-away</p>
       <div class="dlg-actions"><button class="btn primary">Close</button></div>
     </form>
   </dialog>
 
+  <dialog id="settings">
+    <form method="dialog" class="dlg">
+      <h2>Settings</h2>
+      <div class="two">
+        <div class="field"><label for="setCurrency">Currency</label><input type="text" id="setCurrency" maxlength="4"></div>
+        <div class="field"><label for="setPrice">Price per kg</label><input type="number" id="setPrice" min="0" step="10"></div>
+      </div>
+      <div class="field">
+        <label for="setMaterial">Material</label>
+        <select id="setMaterial">
+          <option value="1.24">PLA (1.24 g/cm³)</option>
+          <option value="1.27">PETG (1.27 g/cm³)</option>
+          <option value="1.04">ABS / ASA (1.04 g/cm³)</option>
+        </select>
+      </div>
+      <div class="dlg-actions"><button class="btn primary">Done</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="library">
+    <form method="dialog" class="dlg">
+      <h2>Library</h2>
+      <p>Parts you saved with ★, kept in this browser. Click one to open it.</p>
+      <ul class="lib-list" id="libList"></ul>
+      <div class="dlg-actions"><button class="btn primary">Close</button></div>
+    </form>
+  </dialog>
+
+  <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
   <div class="toast" id="toast" role="status" hidden></div>
   <noscript><p style="padding:16px">The AESS generator needs JavaScript to build parts.</p></noscript>
   <script type="module" src="app.js"></script>

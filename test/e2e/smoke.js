@@ -13,7 +13,7 @@ try {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
 
-  await page.goto(`http://localhost:${PORT}/#t=hopper&x=2&y=3&h=7&w=std&s=0.6&f=0.4`);
+  await page.goto(`http://localhost:${PORT}/#type=hopper&nx=2&ny=3&nh=7`);
   await page.waitForFunction(() => /\d+ g/.test(document.getElementById('statGrams').textContent), null, { timeout: 60000 });
   assert.equal(await page.textContent('#hudName'), 'AESS-HOP-2x3x7-STD');
 

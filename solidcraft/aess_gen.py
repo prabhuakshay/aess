@@ -3,18 +3,20 @@
 
 Examples:
   python aess_gen.py hopper 2 3 7                  # 2x3 grid, 7 height units, STD wall
-  python aess_gen.py box 1 1 3 --wall lite
-  python aess_gen.py lid 2 3                       # lids are always 1 height unit
+  python aess_gen.py box 1 1 3 --wall lite         # open box (no lid rails)
   python aess_gen.py hopper 3 2 10 --front 0.3 --format stl
   python aess_gen.py --list ../sets/starter.txt       # one spec per line, e.g. "box 2 2 5 heavy"
   python aess_gen.py box 2 3 7 --estimate          # print grams only, no export
 
 The AESS standard
   footprint : nx * 42 mm - 0.5 mm  (nx, ny = 1..6, so it fits the Bambu A1's 256 mm bed)
-  height    : nh * 7 mm + 4.3 mm   (nh = 1..35; nh=1 is a lid)
+  height    : nh * 7 mm + 4.3 mm   (nh = 1..35)
               a stack of a 3-unit and a 4-unit bin is exactly as tall as one 7-unit bin
-  interface : 4 mm foot, 45 deg flare, 1.2 mm rim, 0.6 mm snap bead at 2.4 mm + matching groove (fixed for every part)
-  wall      : lite 0.8 / std 1.2 / heavy 1.4 mm (sides and floor; the rim stays 1.2)
+  interface : 4 mm foot, 45 deg flare, 1.2 mm rim (fixed for every part)
+  wall      : lite 0.8 / std 1.2 / heavy 1.6 mm (sides and floor; the rim stays 1.2)
+
+This exports plain bin bodies from the CAD master. Slide-lid rails, slide lids, text,
+wall patterns and dividers come from the web generator or `npm run build:set`.
 """
 import argparse
 import json
@@ -30,8 +32,8 @@ OUT_DIR = HERE.parent / "print"
 PLA_DENSITY = 1.24  # g/cm3 (PETG ~1.27)
 
 U, HU, LIP, FIT, BED = 42.0, 7.0, 4.0, 0.3, 256.0
-WALLS = {"lite": 0.8, "std": 1.2, "heavy": 1.4}
-TYPES = {"hopper": "HOP", "box": "BOX", "lid": "LID"}
+WALLS = {"lite": 0.8, "std": 1.2, "heavy": 1.6}
+TYPES = {"hopper": "HOP", "box": "BOX"}
 
 
 def find_cli():
@@ -42,21 +44,19 @@ def find_cli():
     sys.exit("solidcraft-cli not found (install SolidCraft or add it to PATH)")
 
 
-def spec(kind, nx, ny, nh, wall, front, snap):
+def spec(kind, nx, ny, nh, wall, front):
     if kind not in TYPES:
         raise ValueError(f"type must be one of {', '.join(TYPES)}")
-    if kind == "lid":
-        nh = 1
     for name, v, hi in (("nx", nx, 6), ("ny", ny, 6), ("nh", nh, 35)):
         if not (isinstance(v, int) and 1 <= v <= hi):
             raise ValueError(f"{name} must be a whole number 1..{hi} (got {v})")
-    if kind == "hopper" and nh < 3:
-        raise ValueError("a hopper needs nh >= 3 (lower is just a tray: use box)")
+    if kind == "hopper" and nh < 2:
+        raise ValueError("a hopper needs nh >= 2")
     wall_mm = WALLS.get(str(wall).lower()) if not isinstance(wall, float) else wall
     if wall_mm is None:
         wall_mm = float(wall)
-    if not 0.8 <= wall_mm <= 1.4:
-        raise ValueError("wall must be lite/std/heavy or 0.8..1.4 mm")
+    if not 0.8 <= wall_mm <= 1.6:
+        raise ValueError("wall must be lite/std/heavy or 0.8..1.6 mm")
     wall_tag = next((k.upper() for k, v in WALLS.items() if abs(v - wall_mm) < 1e-6), f"{wall_mm:g}MM")
     front_ratio = front if kind == "hopper" else 1.0
     if not 0.1 <= front_ratio <= 1.0:
@@ -64,11 +64,10 @@ def spec(kind, nx, ny, nh, wall, front, snap):
     H = nh * HU + LIP + FIT
     params = {
         "nx": str(nx), "ny": str(ny), "nh": str(nh),
-        "wall": f"{wall_mm} mm", "front_ratio": str(front_ratio), "snap": f"{snap} mm",
+        "wall": f"{wall_mm} mm", "front_ratio": str(front_ratio),
     }
-    hpart = "" if kind == "lid" else f"x{nh}"
-    snap_tag = "" if abs(snap - 0.6) < 1e-9 else f"-S{snap:g}"
-    name = f"AESS-{TYPES[kind]}-{nx}x{ny}{hpart}-{wall_tag}{snap_tag}"
+    hpart = f"x{nh}"
+    name = f"AESS-{TYPES[kind]}-{nx}x{ny}{hpart}-{wall_tag}{'' if kind == 'hopper' else '-OPEN'}"
     size = (nx * U - 0.5, ny * U - 0.5, H)
     return name, params, size
 
@@ -117,7 +116,7 @@ def find_volume(obj):
 
 
 def build(cli, a, fmt, outdir, est_only):
-    name, params, size = spec(a["type"], a["nx"], a["ny"], a.get("nh", 1), a["wall"], a["front"], a["snap"])
+    name, params, size = spec(a["type"], a["nx"], a["ny"], a.get("nh", 1), a["wall"], a["front"])
     dims = f"{size[0]:.1f} x {size[1]:.1f} x {size[2]:.1f} mm"
     if est_only:
         vol, g = estimate(cli, params)
@@ -149,7 +148,6 @@ def main():
     ap.add_argument("nh", nargs="?", type=int, default=7, help="height units of 7 mm (default 7 = 53.3 mm)")
     ap.add_argument("--wall", default="std", help="lite | std | heavy | mm (default std)")
     ap.add_argument("--front", type=float, default=0.4, help="hopper front-lip height as a fraction of H (default 0.4)")
-    ap.add_argument("--snap", type=float, default=0.6, help="snap bead in mm: 0.5 looser, 0.7 tighter (default 0.6)")
     ap.add_argument("--format", default="3mf", choices=["3mf", "stl", "step"])
     ap.add_argument("--out", type=Path, default=OUT_DIR)
     ap.add_argument("--list", type=Path, help="file with one spec per line: <type> <nx> <ny> [nh] [wall]")
@@ -160,13 +158,13 @@ def main():
         sys.exit(f"master design missing: {MASTER}")
     cli = find_cli()
     args.out.mkdir(parents=True, exist_ok=True)
-    defaults = {"wall": args.wall, "front": args.front, "snap": args.snap}
+    defaults = {"wall": args.wall, "front": args.front}
 
     jobs = []
     if args.list:
         for ln in args.list.read_text(encoding="utf-8").splitlines():
             a = parse_line(ln, defaults)
-            if a:
+            if a and a["type"] in TYPES:  # lids come from the web generator
                 jobs.append(a)
     elif args.type and args.nx and args.ny:
         jobs.append(dict(defaults, type=args.type, nx=args.nx, ny=args.ny, nh=args.nh))
