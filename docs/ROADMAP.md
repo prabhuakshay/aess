@@ -26,17 +26,30 @@ AESS started as stackable storage for a hardware shop and grew into an open syst
 - ✅ **Fixed dividers** (both directions) and a **front scoop**.
 - ✅ **Wall patterns** (diamond, hex, slots) to save filament.
 - 🔜 **Removable dividers:** slots in the walls and slide-in divider plates.
-- 🔜 **Half-grid cups (21 mm):** drop into a box; e.g. 8 cups for M3–M10 nuts in a 2×2 box.
-- 💡 **Tall tool bin** (nh 20+) for drill bits, screwdrivers and hacksaw blades.
+- ✅ **Drop-in cups**, sized from any box.
+- ✅ **Lift-out tray** on a tray ledge.
+- ✅ **Holders:** drill index, hex bits, tool grid; with a tall box they make a tool bin.
+- ✅ **Strength:** floor ribs, wall ribs, gussets, floor-load estimate.
+- ✅ **Hopper side slope, finger grips, thread-check holes.**
 - 💡 **Long tray** presets (1×4, 1×5) for long bolts, hinges and threaded rod.
 - 💡 **Drawer mode:** printed corner posts plus plywood sides turn a stack of bins into a drawer cabinet.
 
 ## Closing and structure
 - ✅ **Lid pinch tab**, and the brand on lids.
-- 🔜 **Stack link clip:** ties neighbouring stacks together, so tall free-standing stacks don't tip.
+- ✅ **Base plate:** links stacks so they don't tip, with rubber-foot or magnet pockets.
+- ✅ **Carry caddy.**
+- ✅ **Lid styles:** window, label recess, dispenser.
+- 💡 **Top link clip** for the top bins of neighbouring stacks.
 - 💡 **Hinged organizer case:** print-in-place hinge, snap latch, holds dividers.
 - 💡 **Dust flap** for the hopper front.
-- 💡 **Base riser:** anti-slip feet with rubber-pad pockets.
+
+## Next up (chosen, not built yet)
+- 🔜 **Batch from a list:** paste a stock list → one labelled bin per line.
+- 🔜 **Labels and icons:**
+  - a tape label recess and card slot on bin fronts
+  - hardware icons beside the text
+  - Hindi / Marathi lettering
+- 🔜 **Shelf / drawer planner and A1 plate packer.**
 
 ## Shop tools
 - 🔜 **Label clip** for the hopper lip, with:
@@ -52,6 +65,6 @@ AESS started as stackable storage for a hardware shop and grew into an open syst
 ## Generator
 - ✅ Engraved or raised brand and label text, and printable paper labels.
 - ✅ Filament, time and cost estimates, a library, undo/redo and a cut-away view.
+- ✅ Offline / installable app, and Bambu Studio presets.
 - 💡 Multi-colour 3MF (text as a separate part for the AMS).
-- 💡 A plate auto-packer that shows what fits on one A1 plate.
-- 💡 Offline / PWA install.
+- 💡 Per-object settings inside the 3MF. Bambu Studio ignored them in testing, so for now it's presets.

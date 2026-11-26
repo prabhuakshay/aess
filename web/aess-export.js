@@ -69,11 +69,12 @@ export function make3MF(items, { bed = 256, spacing = 6 } = {}) {
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>`;
   const rels = `<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>`;
-  return zipStore([
+  const files = [
     ['[Content_Types].xml', contentTypes],
     ['_rels/.rels', rels],
     ['3D/3dmodel.model', model],
-  ]);
+  ];
+  return zipStore(files);
 }
 
 /** ZIP of several files (any ArrayBuffer or string), stored without compression. */

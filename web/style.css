@@ -144,16 +144,18 @@ details.sec > summary .muted { text-transform: none; letter-spacing: 0; font-wei
   background: var(--text); color: var(--bg); font-size: 12.5px; line-height: 1.4; font-weight: 400; box-shadow: 0 6px 24px rgba(0,0,0,.25);
 }
 
-.typecards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.typecards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .typecard {
   display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
   border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--surface);
-  padding: 10px 10px 9px; cursor: pointer; transition: border-color .15s, background .15s;
+  padding: 8px 8px 7px; cursor: pointer; transition: border-color .15s, background .15s; min-width: 0;
 }
-.typecard svg { width: 40px; height: 32px; color: var(--muted); margin-bottom: 4px; stroke-width: 2.4; }
+.typecard svg { width: 34px; height: 26px; color: var(--muted); margin-bottom: 2px; stroke-width: 2.4; }
 .typecard svg .thin { stroke-width: 1.6; opacity: .55; }
 .typecard .tc-name { font-weight: 600; }
-.typecard .tc-sub { color: var(--muted); font-size: 11.5px; line-height: 1.25; }
+.typecard .tc-name { font-size: 13px; }
+.typecard .tc-sub { color: var(--muted); font-size: 11px; line-height: 1.2; }
+#hostNote { background: var(--accent-soft); border-radius: 8px; padding: 8px 10px; color: var(--text); }
 .typecard:hover { border-color: var(--accent-2); }
 .typecard[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); }
 .typecard[aria-checked="true"] svg { color: var(--accent); }
@@ -273,3 +275,4 @@ dialog::backdrop { background: rgba(12, 10, 9, .5); }
   .linkbtn { padding: 8px 6px; }
   #themeBtn, #settingsBtn { display: none; }
 }
+a.btn { text-decoration: none; text-align: center; color: inherit; display: inline-block; }

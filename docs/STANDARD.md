@@ -51,7 +51,20 @@ There is no snap between stacked bins. The 4.3 mm-deep foot keeps a stack aligne
 
 A lid fits every box with the same footprint, whatever the box's height.
 
-## 4. Free parameters (do not affect stacking)
+## 4. Inserts, bases and caddies
+
+| Part | Rule |
+|---|---|
+| **Insert clearance** | Cups and holders stand on the box floor, or on top of its floor ribs. They clear the widest point of the inner wall below their top by 0.4 mm, counting gussets. |
+| **Tray ledge** | A ledge reaching 3.2 mm in from the outside, with a 45° underside, set `trayDepth` below the box's usable top (just under the lid ledge). |
+| **Lift-out tray** | Outline inset 2.6 mm, which clears the lid lips (2.2 mm). It sits on the ledge with 0.6 mm overlap. |
+| **Holder** | Deck 3 mm thick (8 mm for hex bits) with support ribs every ~20 mm. It prints deck-down. |
+| **Base plate** | Flat bottom. One socket per stack: the stack's outline inset 1.2 mm and 5.3 mm deep, so feet seat exactly as on a bin. |
+| **Caddy** | Wells 1 mm larger than a 1×1 bin and 16 mm deep, with a 3 mm handle plate between the rows. |
+
+Inserts are sized from a host box, so the same settings must go to the box and its inserts. The generator's “+ Add the box” does that.
+
+## 5. Free parameters (do not affect stacking)
 
 | Parameter | Range | Default |
 |---|---|---|
@@ -59,16 +72,22 @@ A lid fits every box with the same footprint, whatever the box's height.
 | Floor | 0.8–3 mm | = wall |
 | Wall pattern | none, diamond, hex, slots; hole 3–16 mm, bars 1.2–6 mm. Every hole top is ≥ 45° | none |
 | Lid pattern | none, diamond, hex | none |
-| Dividers | 0–9 each way, built into the cavity, stopping below the lid ledge | 0 |
+| Dividers | 0–30 each way, built into the cavity, stopping below the lid ledge (or the tray ledge) | 0 |
+| Floor ribs | none, lengthwise or cross; 1.5–6 mm tall, 1.2 mm wide, on the half grid, with 45° tops | none |
+| Wall ribs | vertical, 1.5 mm deep, on the half grid, up to the rim zone (not with wall patterns) | off |
+| Gussets | 0–10 mm 45° fillet between the floor and walls | 0 |
+| Hopper side slope | 0–50 % of the depth | 0 |
+| Finger grips, thread-check holes | through the side walls, with 45° tops | off |
+| Lid style | plain, window (0.5 mm rebate), label recess (12/18/24/36 mm), dispenser (4–40 mm hole) | plain |
 | Scoop | 0–25 mm 45° ramp inside the front wall | 0 |
 | Hopper front lip | 15–90 % of H | 40 % |
 | Text | a label line plus a brand line on the front, engraved (≤ 0.6 mm) or raised 0.6 mm; brand raised 0.5 mm on solid lids | brand "Akshay Enterprises" |
 
-## 5. Naming
+## 6. Naming
 
 ```
 AESS-<TYPE>-<size>[-G<grid>][-H<step>]-<WALL>[-OPEN]
-TYPE   HOP | BOX | LID
+TYPE   HOP | BOX | LID | CUP | TRAY | HOLD | BASE | CADDY   (inserts name their host box)
 size   grid: <nx>x<ny>x<nh>      exact: <W>x<D>x<H>MM  or  ...IN
 grid   tag present only when it differs from the system default (imperial always shows G…IN)
 WALL   LITE | STD | HEAVY | <mm>MM        lids have no wall tag; -S<snap> marks a non-standard lid snap

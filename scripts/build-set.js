@@ -51,7 +51,7 @@ for (const { spec, qty } of items) {
   await writeFile(file, Buffer.from(flags.has('--stl') ? makeSTL(mesh) : make3MF([{ name: sp.name, mesh }])));
   for (let k = 0; k < qty; k++) plate.push({ name: sp.name, mesh });
   total += grams(vol) * qty;
-  console.log(`${sp.name.padEnd(28)} ${`${sp.W} x ${sp.D} x ${sp.H.toFixed(1)} mm`.padEnd(26)} ${grams(vol).toFixed(1).padStart(6)} g  x${qty}`);
+  console.log(`${sp.name.padEnd(28)} ${`${+sp.pW.toFixed(1)} x ${+sp.pD.toFixed(1)} x ${sp.pH.toFixed(1)} mm`.padEnd(26)} ${grams(vol).toFixed(1).padStart(6)} g  x${qty}`);
 }
 if (flags.has('--plate')) await writeFile(join(outDir, 'AESS-plate.3mf'), Buffer.from(make3MF(plate)));
 console.log(`total ~${total.toFixed(0)} g PLA -> ${outDir}`);

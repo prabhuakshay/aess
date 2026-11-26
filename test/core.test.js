@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import Module from 'manifold-3d';
 import { readFileSync } from 'node:fs';
 import { parse } from 'opentype.js/dist/opentype.mjs';
-import { buildPart, resolveSpec, toMesh, STD } from '../web/aess-core.js';
+import { buildPart, resolveSpec, toMesh, STD, placements, floorLoadKg, printSettings } from '../web/aess-core.js';
 import { make3MF, makeSTL } from '../web/aess-export.js';
 
 const M = await Module();
@@ -149,4 +149,114 @@ test('sizes: grid units, other grids and exact sizes', () => {
   assert.match(c.name, /^AESS-BOX-100x60x40MM-STD$/);
   assert.match(resolveSpec({ type: 'lid', nx: 2, ny: 3 }).name, /^AESS-LID-2x3$/);
   assert.ok(resolveSpec({ type: 'box', nx: 7, ny: 1 }).warnings.length > 0, 'warns when bigger than the bed');
+});
+
+// ---------- v0.3: strength, variants, inserts, structure ----------
+
+const clashVol = (a, b) => { const c = M.Manifold.intersection(a, b); const v = c.volume(); c.delete(); return v; };
+const inBox = (spec, orient = 'use') => {
+  const box = make({ ...spec, type: 'box' });
+  const parts = (placements(spec) ?? [[0, 0, 0]]).map((p) => buildPart(M, spec, { segments: 8, font, orient }).translate(p));
+  return { box, parts, done: () => [box, ...parts].forEach((m) => m.delete()) };
+};
+
+test('new options and part types build valid closed solids', () => {
+  const cases = [
+    { type: 'box', nx: 2, ny: 3, nh: 7, floorRibs: 'cross', wallRibs: true, gusset: 4 },
+    { type: 'hopper', nx: 2, ny: 3, nh: 7, floorRibs: 'long', sideSlope: 0.35, gauge: true, grips: true },
+    { type: 'box', nx: 2, ny: 3, nh: 10, trayDepth: 20, grips: true, divX: 2 },
+    { type: 'lid', nx: 2, ny: 3, lidStyle: 'window' },
+    { type: 'lid', nx: 2, ny: 3, lidStyle: 'label' },
+    { type: 'lid', nx: 2, ny: 2, lidStyle: 'dispenser', dispHole: 14 },
+    { type: 'cup', nx: 2, ny: 2, nh: 5, cupsX: 3, cupsY: 3 },
+    { type: 'tray', nx: 2, ny: 3, nh: 10, divX: 1 },
+    { type: 'holder', nx: 2, ny: 3, nh: 10, holderMode: 'drill' },
+    { type: 'holder', nx: 2, ny: 2, nh: 4, holderMode: 'hex' },
+    { type: 'holder', nx: 2, ny: 2, nh: 20, holderMode: 'grid', system: 'imperial', U: 50.8, hu: 6.35 },
+    { type: 'base', nx: 2, ny: 2, baseCols: 2, baseRows: 1, basePads: 'magnet' },
+    { type: 'caddy', caddyCols: 4, caddyRows: 2 },
+  ];
+  for (const spec of cases) {
+    const p = make(spec);
+    try {
+      assert.equal(p.status(), 'NoError', resolveSpec(spec).name);
+      assert.ok(p.volume() > 500, resolveSpec(spec).name);
+      assert.ok(p.boundingBox().min[2] > -1e-6, `${resolveSpec(spec).name} sits on the bed`);
+    } finally { p.delete(); }
+  }
+});
+
+test('ribs and gussets stiffen the floor for little filament', () => {
+  const base = { type: 'box', nx: 2, ny: 3, nh: 7, textStyle: 'off' };
+  const flat = floorLoadKg(base), cross = floorLoadKg({ ...base, floorRibs: 'cross', ribH: 4 });
+  assert.ok(flat > 0.2 && flat < 5, `flat floor ${flat}`);
+  assert.ok(cross > flat * 4, `cross ribs ${cross} vs ${flat}`);
+  assert.ok(vol({ ...base, floorRibs: 'cross', ribH: 4 }) < vol({ ...base, floor: 2.4 }), 'ribs use less plastic than a doubled floor');
+  assert.ok(vol({ ...base, gusset: 4 }) > vol(base));
+  assert.ok(vol({ ...base, wallRibs: true }) > vol(base));
+});
+
+test('inserts fit inside their box without touching it', () => {
+  for (const spec of [
+    { type: 'cup', nx: 2, ny: 2, nh: 5, cupsX: 3, cupsY: 2 },
+    { type: 'cup', nx: 2, ny: 3, nh: 6, cupsX: 2, cupsY: 3, floorRibs: 'cross', gusset: 3 },
+    { type: 'holder', nx: 2, ny: 3, nh: 10, holderMode: 'drill' },
+    { type: 'holder', nx: 2, ny: 2, nh: 5, holderMode: 'hex', wall: 'heavy' },
+    { type: 'tray', nx: 2, ny: 3, nh: 10 },
+    { type: 'tray', nx: 3, ny: 2, nh: 8, wall: 'lite', trayDepth: 15 },
+  ]) {
+    const spt = resolveSpec(spec);
+    const host = { ...spec, trayDepth: spt.trayDepth };
+    const { box, parts, done } = inBox(host);
+    try {
+      for (const p of parts) assert.ok(clashVol(box, p) < 0.05, `${spt.name} touches its box by ${clashVol(box, p).toFixed(3)} mm3`);
+      for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++) assert.ok(clashVol(parts[i], parts[j]) < 1e-3, 'cups overlap');
+      if (spec.type === 'tray') {
+        const lid = make({ ...host, type: 'lid' }).translate([0, 0, spt.zs]);
+        assert.ok(clashVol(lid, parts[0]) < 1e-3, 'tray clears the lid');
+        lid.delete();
+        // the tray rests on its ledge: lowered 0.5 mm it must hit the box
+        const lower = make(host).translate([0, 0, spt.trayZ - 0.5]);
+        assert.ok(clashVol(box, lower) > 1, 'tray sits on the ledge');
+        lower.delete();
+      }
+    } finally { done(); }
+  }
+});
+
+test('lid variants still fit their box', () => {
+  for (const lidStyle of ['window', 'label', 'dispenser']) {
+    const spec = { type: 'box', nx: 2, ny: 3, nh: 6 };
+    const sp = resolveSpec(spec);
+    const box = make(spec);
+    const lid = make({ ...spec, type: 'lid', lidStyle }).translate([0, 0, sp.zs]);
+    const upper = make({ type: 'box', nx: 2, ny: 3, nh: 3 }).translate([0, 0, sp.H - STD.lip - STD.fit]);
+    assert.ok(clashVol(box, lid) < 0.5, lidStyle);
+    assert.ok(clashVol(upper, lid) < 1e-3, `${lidStyle}: stacked bin clears the lid`);
+    [box, lid, upper].forEach((m) => m.delete());
+  }
+});
+
+test('a bin seated in a base plate or caddy does not collide with it', () => {
+  const base = make({ type: 'base', nx: 2, ny: 2, baseCols: 2, baseRows: 1 });
+  const bsp = resolveSpec({ type: 'base', nx: 2, ny: 2, baseCols: 2, baseRows: 1 });
+  for (const sx of [-1, 1]) {
+    const bin = make({ type: 'box', nx: 2, ny: 2, nh: 3, lidRails: false }).translate([sx * (bsp.W + 0.5) / 2, 0, bsp.pH - STD.lip - STD.fit]);
+    assert.ok(clashVol(base, bin) < 1e-3, 'bin in base');
+    bin.delete();
+  }
+  base.delete();
+  const caddy = make({ type: 'caddy', caddyCols: 2, caddyRows: 2 });
+  const csp = resolveSpec({ type: 'caddy', caddyCols: 2, caddyRows: 2 });
+  const cx = -csp.pW / 2 + 1.6 + csp.cell / 2, cy = -csp.pD / 2 + 1.6 + csp.cell / 2;
+  const bin = make({ type: 'hopper', nx: 1, ny: 1, nh: 4 }).translate([cx, cy, 1.6]);
+  assert.ok(clashVol(caddy, bin) < 1e-3, 'bin in caddy well');
+  [caddy, bin].forEach((m) => m.delete());
+});
+
+test('print settings follow the wall class', () => {
+  assert.equal(printSettings({ wall: 'lite' }).wall_loops, 2);
+  assert.equal(printSettings({ wall: 'std' }).wall_loops, 3);
+  assert.equal(printSettings({ wall: 'heavy' }).wall_loops, 4);
+  assert.equal(printSettings({}).sparse_infill_density, '0%');
 });

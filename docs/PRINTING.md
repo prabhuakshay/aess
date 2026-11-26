@@ -14,6 +14,13 @@ Tuned for a Bambu Lab A1 (256 mm bed). Any 0.4 mm FDM printer works.
 | Orientation | as exported: bins foot down, lids flat (the plate on the bed) |
 | Material | PLA for storage; PETG for lids that get opened all day (it flexes rather than cracks) |
 
+## Bambu Studio presets
+In the generator, open ⚙ and download the **AESS Lite / Standard / Heavy** presets. Import them once (File → Import → Import Configs…). Each is the stock *0.20mm Standard @BBL A1* with the AESS wall count, 0% infill and the seam at the back, away from the branding. The site says which one each part needs.
+
+Exceptions:
+- **Base plates:** print with the stock profile (15% infill).
+- **Holders:** print deck-down, exactly as exported.
+
 ## Fit test first
 Print `AESS-BOX-1x1x3-STD` and `AESS-LID-1x1` (about 10 g; *Add a preset → Fit test* in the generator). Slide the lid in.
 - **Clicks shut at the end and pulls out with the tab:** keep *Standard* (0.7).

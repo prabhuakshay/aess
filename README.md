@@ -21,10 +21,18 @@ AESS started as storage for a hardware shop: screws, nuts, anchors and fittings,
 - **Hoppers:** open-front pick bins. Stack them into a wall and grab parts from the front.
 - **Boxes:** closed bins with built-in rails for a slide lid.
 - **Slide lids:** a 1.2 mm plate that slides in and clicks shut. It adds **no height**, so lidded boxes still stack. Pull it out by the pinch tab.
+- **Inserts:**
+  - drop-in cups
+  - a lift-out tray
+  - holders: a drill index with engraved sizes, hex bits, a tool grid
+- **Structure:** base plates that link stacks so they don't tip, and a carry caddy.
 - **Configurable:**
   - wall weights, floor thickness
+  - ribbed floors and walls, corner gussets
   - wall patterns that save filament
   - dividers and a front scoop
+  - hopper side slope, finger grips, thread-check holes
+  - window, label and dispenser lids
   - engraved or raised branding plus a label line
   - metric or imperial grid
 - **Built for printing:** no supports, no infill.
@@ -40,8 +48,10 @@ Everything runs in your browser. Nothing is uploaded.
 Other conveniences:
 - undo/redo, keyboard shortcuts and a saved-parts library
 - a cut-away view, with the lid shown in place
-- filament, time and cost estimates
+- filament, time, cost and floor-load estimates
 - share links for any part
+- it works offline as an installable app
+- Bambu Studio presets
 
 **Print the fit test first** (*Add a preset → Fit test*, ~10 g). Then read [docs/PRINTING.md](docs/PRINTING.md).
 

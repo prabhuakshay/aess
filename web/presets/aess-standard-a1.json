@@ -1,0 +1,18 @@
+{
+    "from": "User",
+    "inherits": "0.20mm Standard @BBL A1",
+    "name": "AESS Standard - 0.20mm @BBL A1",
+    "print_settings_id": "AESS Standard - 0.20mm @BBL A1",
+    "print_extruder_id": [
+        "1"
+    ],
+    "print_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "version": "2.9.0.81",
+    "wall_loops": "3",
+    "sparse_infill_density": "0%",
+    "bottom_shell_layers": "6",
+    "top_shell_layers": "4",
+    "seam_position": "back"
+}

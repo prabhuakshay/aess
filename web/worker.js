@@ -10,10 +10,10 @@ const fontReady = fetch(new URL('./fonts/BarlowCondensed-Bold.ttf', import.meta.
   .catch(() => null); // text is skipped if the font can't load
 
 self.onmessage = async ({ data }) => {
-  const { id, spec, segments } = data;
+  const { id, spec, segments, orient } = data;
   try {
     const [M, font] = await Promise.all([ready, fontReady]);
-    const part = buildPart(M, spec, { segments, font });
+    const part = buildPart(M, spec, { segments, font, orient });
     const volume = part.volume();
     const mesh = toMesh(part);
     part.delete();

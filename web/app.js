@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { DEFAULTS, STD, SYSTEMS, resolveSpec, grams, metres, printMinutes } from './aess-core.js';
+import { DEFAULTS, STD, SYSTEMS, TYPES, resolveSpec, grams, metres, printMinutes, placements, floorLoadKg, hostSpec, defaultQty, printSettings } from './aess-core.js';
 import { make3MF, makeSTL, makeZip } from './aess-export.js';
 
 const $ = (id) => document.getElementById(id);
@@ -91,11 +91,11 @@ worker.onmessage = ({ data }) => {
   data.ok ? cb.resolve(data) : cb.reject(new Error(data.error));
 };
 worker.onerror = (e) => showStatus(`Geometry engine failed to load (${e.message || 'network error'}). Check your connection and reload.`);
-function build(spec, segments) {
+function build(spec, segments, orient = 'print') {
   const id = ++reqId;
   return new Promise((resolve, reject) => {
     pending.set(id, { resolve, reject });
-    worker.postMessage({ id, spec, segments });
+    worker.postMessage({ id, spec, segments, orient });
   });
 }
 const lidSpecOf = (s) => ({ ...s, type: 'lid' });
@@ -125,7 +125,8 @@ const clip = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
 const mat = (color, opacity = 1) => new THREE.MeshStandardMaterial({
   color, roughness: 0.55, metalness: 0.02, side: THREE.DoubleSide, transparent: opacity < 1, opacity,
 });
-const partMat = mat(0xf59e0b), ghostMat = mat(0xf59e0b, 0.32), lidMat = mat(0x78716c, 0.92);
+const partMat = mat(0xf59e0b), ghostMat = mat(0xf59e0b, 0.32), lidMat = mat(0x78716c, 0.92), hostMat = mat(0xa8a29e, 0.22);
+hostMat.depthWrite = false;
 const group = new THREE.Group();
 scene.add(group);
 let grid;
@@ -160,36 +161,51 @@ function resize() {
 }
 new ResizeObserver(resize).observe(canvas.parentElement);
 
-let current = null, currentLid = null, framedFor = '';
+let current = null, currentLid = null, currentHost = null, framedFor = '';
+const isBin = (t) => t === 'hopper' || t === 'box';
+const hosted = (t) => t === 'lid' || TYPES[t]?.group === 'insert';
 function draw() {
   group.children.forEach((m) => m.geometry.dispose());
   group.clear();
   if (!current) return;
   const sp = current.spec;
-  const stack = $('stackToggle').checked && sp.type !== 'lid' ? 3 : 1;
+  const stack = $('stackToggle').checked && isBin(sp.type) ? 3 : 1;
   const geo = geometryOf(current);
   const pitch = sp.H - STD.lip - STD.fit;
   const showLid = sp.type === 'box' && sp.rails && $('lidToggle').checked && currentLid;
   const lidGeo = showLid ? geometryOf(currentLid) : null;
-  for (let k = 0; k < stack; k++) {
-    const m = new THREE.Mesh(geo, k === 0 ? partMat : ghostMat);
-    m.position.z = k * pitch;
-    group.add(m);
-    if (lidGeo) {
-      const l = new THREE.Mesh(lidGeo, k === 0 ? lidMat : ghostMat);
-      l.position.z = k * pitch + sp.zs;
-      group.add(l);
+  const showHost = hosted(sp.type) && $('lidToggle').checked && currentHost;
+  const place = showHost ? placements(sp) : null;
+  if (showHost) {
+    // the insert or lid where it sits, inside a see-through box
+    group.add(new THREE.Mesh(geometryOf(currentHost), hostMat));
+    for (const [x, y, z] of place) {
+      const m = new THREE.Mesh(geo, partMat);
+      m.position.set(x, y, z);
+      group.add(m);
+    }
+  } else {
+    for (let k = 0; k < stack; k++) {
+      const m = new THREE.Mesh(geo, k === 0 ? partMat : ghostMat);
+      m.position.z = k * pitch;
+      group.add(m);
+      if (lidGeo) {
+        const l = new THREE.Mesh(lidGeo, k === 0 ? lidMat : ghostMat);
+        l.position.z = k * pitch + sp.zs;
+        group.add(l);
+      }
     }
   }
   applyClip();
   makeGrid(sp);
-  const fk = `${sp.W}x${sp.D}x${sp.H}x${stack}`;
-  if (fk !== framedFor) { frame(sp, stack); framedFor = fk; }
+  const fk = `${sp.type}${showHost}x${sp.pW}x${sp.pD}x${sp.pH}x${stack}`;
+  if (fk !== framedFor) { frame(sp, stack, showHost); framedFor = fk; }
 }
 
-function frame(sp, stack = 1) {
-  const h = sp.H + (stack - 1) * (sp.H - STD.lip - STD.fit);
-  const size = Math.max(sp.W, sp.D, h);
+function frame(sp, stack = 1, inHost = false) {
+  const H = inHost ? sp.H : sp.pH, W = inHost ? sp.W : sp.pW, D = inHost ? sp.D : sp.pD;
+  const h = H + (stack - 1) * (sp.H - STD.lip - STD.fit);
+  const size = Math.max(W, D, h);
   const target = new THREE.Vector3(0, 0, h * 0.42);
   const dist = size * 2.6 + 60;
   camera.position.set(target.x - dist * 0.55, target.y - dist * 0.75, target.z + dist * 0.55);
@@ -202,7 +218,7 @@ function applyClip() {
   $('sectionPos').hidden = !on;
   const w = current ? current.spec.W : 100;
   clip.constant = (Number($('sectionPos').value) / 100) * (w / 2);
-  for (const m of [partMat, ghostMat, lidMat]) { m.clippingPlanes = on ? [clip] : []; m.needsUpdate = true; }
+  for (const m of [partMat, ghostMat, lidMat, hostMat]) { m.clippingPlanes = on ? [clip] : []; m.needsUpdate = true; }
 }
 
 (function loop() {
@@ -265,7 +281,8 @@ $$('[data-step]').forEach((b) => b.addEventListener('click', () => {
 }));
 
 const bindSeg = (sel, attr, key, cast = (v) => v) => $$(`${sel} button`).forEach((b) => b.addEventListener('click', () => set({ [key]: cast(b.dataset[attr]) })));
-$$('.typecard').forEach((b) => b.addEventListener('click', () => set({ type: b.dataset.type })));
+const pickType = (type) => set(type === 'tray' && !state.trayDepth ? { type, trayDepth: resolveSpec({ ...state, type }).trayDepth } : { type });
+$$('.typecard').forEach((b) => b.addEventListener('click', () => pickType(b.dataset.type)));
 bindSeg('#modeSeg', 'mode', 'sizeMode');
 bindSeg('#wallSeg', 'wall', 'wall');
 bindSeg('#patternSeg', 'pattern', 'pattern');
@@ -273,6 +290,11 @@ bindSeg('#lidPatternSeg', 'lidpattern', 'lidPattern');
 bindSeg('#textSeg', 'text', 'textStyle');
 bindSeg('#snapSeg', 'snap', 'lidSnap', Number);
 bindSeg('#pullSeg', 'pull', 'lidPull');
+bindSeg('#ribSeg', 'ribs', 'floorRibs');
+bindSeg('#lidStyleSeg', 'lidstyle', 'lidStyle');
+bindSeg('#tapeSeg', 'tape', 'labelTape', Number);
+bindSeg('#holderSeg', 'holder', 'holderMode');
+bindSeg('#padsSeg', 'pads', 'basePads');
 
 const bindRange = (id, key, cast = Number) => $(id).addEventListener('input', (e) => set({ [key]: cast(e.target.value) }));
 bindRange('nh', 'nh');
@@ -281,6 +303,9 @@ bindRange('hole', 'hole');
 bindRange('bar', 'bar');
 bindRange('scoop', 'scoop');
 bindRange('front', 'frontRatio', (v) => Number(v) / 100);
+bindRange('sideSlope', 'sideSlope', (v) => Number(v) / 100);
+for (const k of ['ribH', 'gusset', 'trayDepth', 'dispHole', 'holderH', 'gridHole', 'gridPitch', 'caddyH']) bindRange(k, k);
+for (const k of ['grips', 'gauge', 'wallRibs']) $(k).addEventListener('change', (e) => set({ [k]: e.target.checked }));
 $('chamfer').addEventListener('change', (e) => set({ chamfer: e.target.checked ? 0.4 : 0 }));
 $('rails').addEventListener('change', (e) => set({ lidRails: e.target.checked }));
 $('lidBrand').addEventListener('change', (e) => set({ lidBrand: e.target.checked }));
@@ -357,9 +382,8 @@ document.addEventListener('keydown', (e) => {
   if (mod && e.key.toLowerCase() === 'y' && !typing) { e.preventDefault(); redo(); return; }
   if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); $('dl3mf').click(); return; }
   if (typing || mod || e.altKey) return;
-  if (e.key === '1') set({ type: 'hopper' });
-  else if (e.key === '2') set({ type: 'box' });
-  else if (e.key === '3') set({ type: 'lid' });
+  const typeKeys = ['hopper', 'box', 'lid', 'cup', 'tray', 'holder', 'base', 'caddy'];
+  if (/^[1-8]$/.test(e.key)) pickType(typeKeys[Number(e.key) - 1]);
   else if (e.key.toLowerCase() === 'l') { $('lidToggle').checked = !$('lidToggle').checked; draw(); }
   else if (e.key.toLowerCase() === 'x') { $('sectionToggle').checked = !$('sectionToggle').checked; applyClip(); }
 });
@@ -371,6 +395,8 @@ function refresh() {
   // keep the state normalised without losing the user's other choices
   if (sp.sizeMode === 'grid') Object.assign(state, { nx: sp.nx, ny: sp.ny, ...(sp.type !== 'lid' ? { nh: sp.nh } : {}) });
   const t = sp.type, isLid = t === 'lid', isGrid = sp.sizeMode === 'grid';
+  const bin = isBin(t), insert = TYPES[t].group === 'insert', noHeight = isLid || t === 'base' || t === 'caddy';
+  const sec = (name, show) => { $('panel').querySelector(`[data-sec="${name}"]`).hidden = !show; };
 
   checked('.typecard', (b) => b.dataset.type === t);
   checked('#modeSeg button', (b) => b.dataset.mode === sp.sizeMode);
@@ -381,6 +407,11 @@ function refresh() {
   checked('#snapSeg button', (b) => Math.abs(Number(b.dataset.snap) - sp.lidSnap) < 1e-9);
   checked('#pullSeg button', (b) => b.dataset.pull === sp.lidPull);
   checked('.unitswitch button', (b) => b.dataset.units === (imperial() ? 'in' : 'mm'));
+  checked('#ribSeg button', (b) => b.dataset.ribs === sp.floorRibs);
+  checked('#lidStyleSeg button', (b) => b.dataset.lidstyle === sp.lidStyle);
+  checked('#tapeSeg button', (b) => Number(b.dataset.tape) === sp.labelTape);
+  checked('#holderSeg button', (b) => b.dataset.holder === sp.holderMode);
+  checked('#padsSeg button', (b) => b.dataset.pads === sp.basePads);
 
   $('gridBox').hidden = !isGrid;
   $('customBox').hidden = isGrid;
@@ -388,9 +419,21 @@ function refresh() {
   $('nxOut').textContent = sp.nx ?? '–';
   $('nyOut').textContent = sp.ny ?? '–';
   $('nhOut').textContent = sp.nh ?? '–';
-  $('nhRow').hidden = isLid;
-  $('nhField').hidden = isLid;
-  $('huSel').closest('.field').hidden = isLid;
+  $('nhRow').hidden = noHeight;
+  $('nhField').hidden = noHeight;
+  $('huSel').closest('.field').hidden = noHeight;
+  $('fpGrid').closest('.fp-wrap').hidden = t === 'caddy';
+  const hostDesc = `${isGrid ? `${sp.nx}×${sp.ny}×${sp.nh}` : dims(sp)} box, ${state.wall === 'lite' ? 'Lite' : state.wall === 'heavy' ? 'Heavy' : typeof state.wall === 'number' ? `${state.wall} mm` : 'Standard'} walls`;
+  const note = {
+    lid: `Fits any box with this footprint. Print it with the same lid-snap setting as the box.`,
+    cup: `Sized for the ${hostDesc} below, including its floor ribs and gussets. Print that box with the same settings.`,
+    tray: `Rests on a ledge ${len(sp.trayDepth)} below the lid line of the ${hostDesc} below. The box needs that tray ledge: use “+ Add the box”.`,
+    holder: `Sized for the ${hostDesc} below. Prints upside down (deck on the bed).`,
+    base: `The footprint below is one stack; the base holds ${sp.baseCols * sp.baseRows}.`,
+    caddy: `Wells take 1 × 1 bins of the grid below.`,
+  }[t];
+  $('hostNote').hidden = !note;
+  $('hostNote').textContent = note ?? '';
   const sys = SYSTEMS[sp.system];
   const fillSel = (sel, custom, values, cur, label) => {
     const el = $(sel);
@@ -417,11 +460,63 @@ function refresh() {
     el.step = imperial() ? '0.25' : '1';
     if (document.activeElement !== el) el.value = +toU(sp[key]).toFixed(imperial() ? 3 : 1);
   }
-  $('cHRow').hidden = isLid;
-  $('sizeReadout').textContent = isGrid ? `${sp.nx} × ${sp.ny}${isLid ? '' : ` × ${sp.nh}`} · ${dims(sp)}` : dims(sp);
+  $('cHRow').hidden = noHeight;
+  $('sizeReadout').textContent = isGrid ? `${sp.nx} × ${sp.ny}${noHeight ? '' : ` × ${sp.nh}`} · ${dims(sp)}` : dims(sp);
 
   // walls / inside / front sections only matter for bins
-  for (const s of ['walls', 'inside']) $(`panel`).querySelector(`[data-sec="${s}"]`).hidden = isLid;
+  sec('walls', bin || insert);
+  sec('strength', bin || t === 'cup' || t === 'holder');
+  sec('inside', bin || t === 'tray');
+  sec('front', bin || isLid);
+  sec('cups', t === 'cup');
+  sec('holder', t === 'holder');
+  sec('base', t === 'base');
+  sec('caddy', t === 'caddy');
+  $('patternSeg').closest('.field').hidden = !bin;
+  $('gripsRow').hidden = !bin;
+  $('gaugeRow').hidden = !bin;
+  $('grips').checked = sp.grips;
+  $('gauge').checked = sp.gauge;
+  $('scoop').closest('.field').hidden = !bin;
+  $('trayField').hidden = t !== 'box';
+  $('trayDepth').value = sp.trayDepth;
+  $('trayReadout').textContent = sp.trayDepth ? len(sp.trayDepth) : 'none';
+  $('ribH').value = sp.ribH;
+  $('ribHField').hidden = sp.floorRibs === 'none';
+  $('ribHReadout').textContent = len(sp.ribH);
+  $('gusset').value = sp.gusset;
+  $('gussetReadout').textContent = sp.gusset ? len(sp.gusset) : 'off';
+  $('wallRibs').checked = !!state.wallRibs;
+  $('wallRibs').disabled = sp.pattern !== 'none';
+  $('strengthReadout').textContent = [sp.floorRibs !== 'none' ? `${sp.floorRibs} ribs` : '', sp.gusset ? 'gussets' : '', sp.wallRibs ? 'wall ribs' : ''].filter(Boolean).join(' · ');
+  $('slopeField').hidden = t !== 'hopper';
+  $('sideSlope').value = Math.round(sp.sideSlope * 100);
+  $('slopeReadout').textContent = sp.sideSlope ? `${Math.round(sp.sideSlope * 100)}% of depth` : 'off';
+  $('lidStyleField').hidden = !isLid;
+  $('dispField').hidden = !(isLid && sp.lidStyle === 'dispenser');
+  $('dispHole').value = sp.dispHole;
+  $('dispReadout').textContent = len(sp.dispHole);
+  $('tapeField').hidden = !(isLid && sp.lidStyle === 'label');
+  $('cupsXOut').textContent = sp.cupsX;
+  $('cupsYOut').textContent = sp.cupsY;
+  $('cupsReadout').textContent = `${sp.cupsX * sp.cupsY} cups`;
+  $('holderH').value = sp.holderH;
+  $('holderHReadout').textContent = sp.holderH ? len(sp.holderH) : 'auto';
+  $('gridHoleOpts').hidden = sp.holderMode !== 'grid';
+  $('gridHole').value = sp.gridHole; $('gridHoleReadout').textContent = len(sp.gridHole);
+  $('gridPitch').value = sp.gridPitch; $('gridPitchReadout').textContent = len(sp.gridPitch);
+  $('holderReadout').textContent = { drill: 'drill index', hex: '¼″ hex bits', grid: 'tool grid' }[sp.holderMode];
+  $('baseColsOut').textContent = sp.baseCols;
+  $('baseRowsOut').textContent = sp.baseRows;
+  $('baseReadout').textContent = `${sp.baseCols * sp.baseRows} stack${sp.baseCols * sp.baseRows > 1 ? 's' : ''}`;
+  $('caddyColsOut').textContent = sp.caddyCols;
+  $('caddyRowsOut').textContent = sp.caddyRows;
+  $('caddyH').value = sp.caddyH; $('caddyHReadout').textContent = len(sp.caddyH);
+  $('caddyReadout').textContent = `${sp.caddyCols * sp.caddyRows} wells`;
+  $('statLoadBox').hidden = !bin;
+  const ps = printSettings(state);
+  const preset = !bin ? (t === 'base' ? 'Standard @BBL A1 (15% infill)' : 'AESS Lite') : ps.wall_loops <= 2 ? 'AESS Lite' : ps.wall_loops === 3 ? 'AESS Standard' : 'AESS Heavy';
+  $('printHint').textContent = `Print with: ${preset} preset${t === 'holder' ? ', deck down (as exported)' : ''} · ${ps.wall_loops} walls, ${ps.sparse_infill_density} infill.`;
   $('floor').value = sp.floor;
   $('floorReadout').textContent = len(sp.floor, 2);
   $('wallsReadout').textContent = `${len(sp.wall, 2)}${sp.pattern !== 'none' ? ` · ${sp.pattern}` : ''}`;
@@ -441,20 +536,25 @@ function refresh() {
   if (document.activeElement !== $('brandIn')) $('brandIn').value = state.brand;
   if (document.activeElement !== $('labelIn')) $('labelIn').value = state.label;
 
-  $('lidSec').hidden = t === 'hopper';
+  $('lidSec').hidden = !(t === 'box' || isLid);
   $('railsRow').hidden = t !== 'box';
   $('rails').checked = state.lidRails !== false;
   $('lidPatternField').hidden = !isLid;
   $('lidPullField').hidden = t === 'hopper';
   $('lidBrandRow').hidden = !isLid;
   $('lidBrand').checked = sp.lidBrand;
-  $('lidToggleWrap').hidden = !(t === 'box' && sp.rails);
-  $('addLid').hidden = !(t === 'box' && sp.rails);
+  $('lidToggleWrap').hidden = !((t === 'box' && sp.rails) || hosted(t));
+  $('lidToggleWrap').querySelector('span').textContent = hosted(t) ? 'Box' : 'Lid';
+  $('lidToggleWrap').dataset.tip = hosted(t) ? 'Show the box this part fits, see-through.' : 'Show the slide lid in place on this box.';
+  $('addLid').hidden = !((t === 'box' && sp.rails) || hosted(t));
+  $('addLid').textContent = hosted(t) ? '+ Add the box' : '+ Add its lid';
+  $('hudDims').title = '';
   $('undoBtn').disabled = !past.length;
   $('redoBtn').disabled = !future.length;
 
   $('hudName').textContent = sp.name;
-  $('hudDims').textContent = dims(sp);
+  const forBox = `for a ${isGrid ? `${sp.nx}×${sp.ny}${isLid ? '' : `×${sp.nh}`}` : dims(sp)} box`;
+  $('hudDims').textContent = bin ? dims(sp) : insert ? forBox : `${dims({ ...sp, W: sp.pW, D: sp.pD, H: sp.pH, type: 'x' })}${isLid ? ` · ${forBox}` : ''}`;
   $('hudWarn').replaceChildren(...sp.warnings.map((w) => Object.assign(document.createElement('li'), { textContent: w })));
 
   writeHash();
@@ -471,12 +571,18 @@ function schedulePreview() {
     $('busy').hidden = false;
     try {
       const wantLid = spec.type === 'box' && spec.lidRails !== false;
-      const [res, lid] = await Promise.all([build(spec, PREVIEW_SEGMENTS), wantLid ? build(lidSpecOf(spec), PREVIEW_SEGMENTS) : null]);
+      const wantHost = hosted(spec.type);
+      const [res, lid, host] = await Promise.all([
+        build(spec, PREVIEW_SEGMENTS, 'use'),
+        wantLid ? build(lidSpecOf(spec), PREVIEW_SEGMENTS) : null,
+        wantHost ? build(hostSpec(spec), PREVIEW_SEGMENTS) : null,
+      ]);
       if (mine !== latest) return;
       hideStatus();
       if (res.font === false && (spec.brand || spec.label) && spec.textStyle !== 'off') showStatus('Lettering font could not load, so text is skipped.');
       current = res;
       currentLid = lid;
+      currentHost = host;
       draw();
       renderStats();
     } catch (err) {
@@ -491,7 +597,7 @@ const fmtTime = (min) => (min < 60 ? `${Math.round(min)}m` : `${Math.floor(min /
 const money = (g) => `${prefs.currency}${((g / 1000) * prefs.price).toFixed(prefs.price * g / 1000 < 10 ? 1 : 0)}`;
 function perPlate(sp) {
   const fit = (n) => Math.max(0, Math.floor((STD.bed + 4) / (n + 4)));
-  return Math.max(fit(sp.W) * fit(sp.D), fit(sp.D) * fit(sp.W));
+  return Math.max(fit(sp.pW) * fit(sp.pD), fit(sp.pD) * fit(sp.pW));
 }
 function renderStats() {
   if (!current) return;
@@ -502,6 +608,8 @@ function renderStats() {
   $('statCost').textContent = money(g);
   const n = perPlate(current.spec);
   $('statPlate').textContent = n ? `${n}` : 'too big';
+  const kg = floorLoadKg(current.spec);
+  $('statLoad').textContent = kg == null ? '—' : kg < 10 ? `${kg.toFixed(1)} kg` : `${Math.round(kg)} kg`;
 }
 
 // ---------- downloads ----------
@@ -541,8 +649,12 @@ function addToPlate(spec, qty = 1) {
   store.set('aess-plate', plate);
   renderPlate();
 }
-$('addPlate').addEventListener('click', () => { addToPlate({ ...state }); toast(`Added ${nameOf(state)}`); });
-$('addLid').addEventListener('click', () => { addToPlate(lidSpecOf(state)); toast(`Added ${nameOf(lidSpecOf(state))}`); });
+$('addPlate').addEventListener('click', () => { const q = defaultQty(state); addToPlate({ ...state }, q); toast(`Added ${q > 1 ? `${q} × ` : ''}${nameOf(state)}`); });
+$('addLid').addEventListener('click', () => {
+  const extra = hosted(state.type) ? hostSpec(state) : lidSpecOf(state);
+  addToPlate(extra);
+  toast(`Added ${nameOf(extra)}`);
+});
 $('clearPlate').addEventListener('click', () => { plate = []; store.set('aess-plate', plate); renderPlate(); });
 
 const PRESETS = {
@@ -555,6 +667,14 @@ const PRESETS = {
   ],
   screws: [{ type: 'hopper', nx: 1, ny: 2, nh: 7, qty: 6 }],
   nuts: [{ type: 'box', nx: 2, ny: 2, nh: 4, divX: 2, divY: 2 }, { type: 'lid', nx: 2, ny: 2 }],
+  nutcups: [{ type: 'box', nx: 2, ny: 2, nh: 4, gusset: 2 }, { type: 'cup', nx: 2, ny: 2, nh: 4, gusset: 2, cupsX: 3, cupsY: 3, qty: 9 }, { type: 'lid', nx: 2, ny: 2 }],
+  drill: [{ type: 'box', nx: 2, ny: 3, nh: 6, label: 'Drill bits' }, { type: 'holder', nx: 2, ny: 3, nh: 6, holderMode: 'drill' }, { type: 'lid', nx: 2, ny: 3 }],
+  bits: [{ type: 'box', nx: 2, ny: 2, nh: 5, label: 'Hex bits' }, { type: 'holder', nx: 2, ny: 2, nh: 5, holderMode: 'hex' }, { type: 'lid', nx: 2, ny: 2 }],
+  tools: [{ type: 'box', nx: 2, ny: 2, nh: 18, lidRails: false, floorRibs: 'cross' }, { type: 'holder', nx: 2, ny: 2, nh: 18, lidRails: false, floorRibs: 'cross', holderMode: 'grid', gridHole: 12, gridPitch: 18, holderH: 40 }],
+  toolbox: [{ type: 'box', nx: 3, ny: 2, nh: 10, trayDepth: 22, grips: true, floorRibs: 'cross' }, { type: 'tray', nx: 3, ny: 2, nh: 10, trayDepth: 22, divX: 2 }, { type: 'lid', nx: 3, ny: 2 }],
+  riser: [3, 6, 9].map((nh) => ({ type: 'box', nx: 2, ny: 3, nh, lidRails: false, wall: 'lite', pattern: 'hex', hole: 10, textStyle: 'off', wallRibs: false })),
+  sorter: [{ type: 'box', nx: 2, ny: 3, nh: 8, lidRails: false, divY: 12, label: 'Discs & sheets' }],
+  dispenser: [{ type: 'box', nx: 2, ny: 2, nh: 6, label: 'Wire' }, { type: 'lid', nx: 2, ny: 2, lidStyle: 'dispenser', dispHole: 12 }],
 };
 $('presetSel').addEventListener('change', (e) => {
   const items = PRESETS[e.target.value];
@@ -695,6 +815,11 @@ function toast(msg) {
 }
 function showStatus(msg) { const s = $('status'); s.textContent = msg; s.hidden = false; }
 function hideStatus() { $('status').hidden = true; }
+
+// offline support (https or localhost only)
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
 
 // a pasted or edited link (or back/forward) loads that part
 addEventListener('hashchange', () => set({ ...DEFAULTS, ...readHash() }));

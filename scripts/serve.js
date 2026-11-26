@@ -9,6 +9,7 @@ const ROOT = resolve(fileURLToPath(new URL('../web/', import.meta.url)));
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.wasm': 'application/wasm',
+  '.webmanifest': 'application/manifest+json', '.ttf': 'font/ttf', '.txt': 'text/plain; charset=utf-8',
 };
 
 export function serve(port = 8080) {

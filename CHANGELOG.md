@@ -4,6 +4,30 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-26
+### Added
+- **New parts:**
+  - **Cups:** drop-in cups sized to a box, printed as a set.
+  - **Lift-out tray:** rests on a new tray ledge in the box, with optional dividers.
+  - **Holder insert:** a drill index (engraved sizes, metric or fractional), a ¼″ hex-bit holder, or a tool hole grid. It prints deck-down, with no supports.
+  - **Base plate:** links 1–6 stacks; rubber-foot or magnet pockets underneath.
+  - **Carry caddy:** wells for 1×1 bins and a handle.
+- **Strength:**
+  - ribbed floors, lengthwise or cross, with 45° tops
+  - inside wall ribs
+  - corner gussets
+  - a floor-load estimate in the stats
+- **Hopper and bin options:** side slope, finger grips, thread-check holes (M3–M12 or #6–½″) with engraved sizes.
+- **Lid styles:** window (rebate for a PET sheet), label recess (12–36 mm tape), dispenser (hole with collar).
+- **Presets:** nut cups, drill index, bit case, tall tool bin, toolbox, counter riser set, sheet sorter, wire dispenser.
+- **Offline:** an installable app (PWA); the generator works without internet after the first visit.
+- **Bambu Studio presets** (Lite / Standard / Heavy): the stock A1 0.20 mm profile with AESS walls, 0% infill and the seam at the back. The site says which preset each part needs.
+- Tests: inserts fit their box without touching it, the tray sits on its ledge and clears the lid, lid variants still fit, and bins seat in bases and caddies. Rib stiffness is checked too.
+
+### Changed
+- Dividers: up to 30 each way.
+- Part picker: 8 types in one grid, with shortcuts 1–8.
+
 ## [0.2.0] - 2026-11-26
 ### Changed (breaking: standard v2)
 - Bins no longer snap together. The foot bead and rim groove are gone, and bins nest on the 4.3 mm foot alone.

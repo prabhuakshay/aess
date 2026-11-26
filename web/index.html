@@ -9,6 +9,8 @@
   <meta property="og:description" content="Stackable 3D-printable bins with slide-lock lids. Pick a size, download a 3MF, print.">
   <meta name="description" content="Generate stackable 3D-printable storage bins with slide-lock lids. Hoppers, boxes, lids, dividers, wall patterns and engraved labels, ready for your slicer.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -68,19 +70,16 @@
     <aside class="panel" id="panel">
       <section class="sec" data-sec="part">
         <div class="typecards" role="radiogroup" aria-label="Part type">
-          <button class="typecard" data-type="hopper" role="radio" data-tip="Open-front pick bin. Stack them into a wall and grab parts from the front without unstacking. Shortcut: 1">
-            <svg viewBox="0 0 48 40"><path d="M6 8v26h36V8M12 8v8h24V8"/></svg>
-            <span class="tc-name">Hopper</span><span class="tc-sub">open-front pick bin</span>
-          </button>
-          <button class="typecard" data-type="box" role="radio" data-tip="Closed bin. With rails on, it takes a slide lid and still stacks with the lid in. Shortcut: 2">
-            <svg viewBox="0 0 48 40"><path d="M6 6v28h36V6"/><path d="M8 11h32" class="thin"/></svg>
-            <span class="tc-name">Box</span><span class="tc-sub">closed, slide lid</span>
-          </button>
-          <button class="typecard" data-type="lid" role="radio" data-tip="A thin lid that slides into a box's rails and clicks shut. It adds no height, so lidded boxes stack. Shortcut: 3">
-            <svg viewBox="0 0 48 40"><path d="M4 20h40"/><path d="M4 20v-6M36 20h8M30 26l6-6-6-6" class="thin"/></svg>
-            <span class="tc-name">Slide lid</span><span class="tc-sub">snap-lock, 0 height</span>
-          </button>
+          <button class="typecard" data-type="hopper" role="radio" data-tip="Open-front pick bin. Stack them into a wall and grab parts from the front without unstacking. Shortcut: 1"><svg viewBox="0 0 48 40"><path d="M6 8v26h36V8M12 8v8h24V8"/></svg><span class="tc-name">Hopper</span><span class="tc-sub">pick bin</span></button>
+          <button class="typecard" data-type="box" role="radio" data-tip="Closed bin. With rails on, it takes a slide lid and still stacks with the lid in. Shortcut: 2"><svg viewBox="0 0 48 40"><path d="M6 6v28h36V6"/><path d="M8 11h32" class="thin"/></svg><span class="tc-name">Box</span><span class="tc-sub">slide lid</span></button>
+          <button class="typecard" data-type="lid" role="radio" data-tip="A thin lid that slides into a box and clicks shut: plain, window, label or dispenser. It adds no height, so lidded boxes stack. Shortcut: 3"><svg viewBox="0 0 48 40"><path d="M4 20h40"/><path d="M4 20v-6M36 20h8M30 26l6-6-6-6" class="thin"/></svg><span class="tc-name">Slide lid</span><span class="tc-sub">click-lock</span></button>
+          <button class="typecard" data-type="cup" role="radio" data-tip="Small cups that drop into the box set above (e.g. 3 × 3 nut cups). Lift one out to pour onto the counter. Shortcut: 4"><svg viewBox="0 0 48 40"><rect x="5" y="12" width="10" height="20" rx="2"/><rect x="19" y="12" width="10" height="20" rx="2"/><rect x="33" y="12" width="10" height="20" rx="2"/></svg><span class="tc-name">Cups</span><span class="tc-sub">drop-in</span></button>
+          <button class="typecard" data-type="tray" role="radio" data-tip="A lift-out tray that rests on a ledge near the top of the box set above, like a toolbox top tray. The box needs the matching tray ledge. Shortcut: 5"><svg viewBox="0 0 48 40"><path d="M6 8v26h36V8"/><path d="M10 12v8h28v-8" class="thin"/></svg><span class="tc-name">Tray</span><span class="tc-sub">lift-out</span></button>
+          <button class="typecard" data-type="holder" role="radio" data-tip="A deck insert for the box set above: a drill index with engraved sizes, a hex-bit holder, or a hole grid for screwdrivers and pens. Shortcut: 6"><svg viewBox="0 0 48 40"><path d="M6 16h36v4H6z"/><circle cx="14" cy="10" r="2" class="thin"/><circle cx="24" cy="10" r="2" class="thin"/><circle cx="34" cy="10" r="2" class="thin"/><path d="M8 20v14M40 20v14" class="thin"/></svg><span class="tc-name">Holder</span><span class="tc-sub">bits & tools</span></button>
+          <button class="typecard" data-type="base" role="radio" data-tip="A base plate that 1–6 stacks stand in, linking them so tall free-standing stacks don't tip. Pockets underneath for rubber feet or magnets. Shortcut: 7"><svg viewBox="0 0 48 40"><path d="M4 26h40v6H4z"/><path d="M8 26v-14h14v14M26 26v-14h14v14" class="thin"/></svg><span class="tc-name">Base</span><span class="tc-sub">stack footing</span></button>
+          <button class="typecard" data-type="caddy" role="radio" data-tip="A carry tote with a handle and wells for 1 × 1 bins, to bring samples to a customer. Shortcut: 8"><svg viewBox="0 0 48 40"><path d="M4 24h40v10H4z"/><path d="M12 24V8h24v16M18 14h12" class="thin"/></svg><span class="tc-name">Caddy</span><span class="tc-sub">carry tote</span></button>
         </div>
+        <p class="hint" id="hostNote" hidden></p>
       </section>
 
       <details class="sec" open data-sec="size">
@@ -166,6 +165,29 @@
         <label class="check" data-tip="Bevels the bottom edge by 0.4 mm so the first layer's squish (elephant foot) doesn't make the foot too wide to nest.">
           <input type="checkbox" id="chamfer" checked> Elephant-foot chamfer <button class="tip" type="button" data-tip="Bevels the bottom edge by 0.4 mm so the first layer's squish (elephant foot) doesn't make the foot too wide to nest."></button>
         </label>
+      <label class="check" id="gripsRow"><input type="checkbox" id="grips"> Finger grips <button class="tip" type="button" data-tip="Hand holes through the two short sides, just below the rim, for lifting heavy boxes. Their tops are 45° so they print without supports."></button></label>
+        <label class="check" id="gaugeRow"><input type="checkbox" id="gauge"> Thread-check holes <button class="tip" type="button" data-tip="A row of holes in the right-hand wall (M3–M12, or #6–1/2 in imperial) with engraved sizes, so a customer can poke a bolt through to find its size."></button></label>
+      </details>
+
+      <details class="sec" open data-sec="strength">
+        <summary>Strength <span class="muted" id="strengthReadout"></span></summary>
+        <div class="field">
+          <label>Floor ribs <button class="tip" type="button" data-tip="Ribs on the inside floor with 45° tops, so parts slide over them. A stacked bin's floor is only held at its edges, so ribs stop it sagging under heavy bolts. Cross ribs 4 mm tall are as stiff as a floor twice as thick, for less plastic."></button></label>
+          <div class="seg" id="ribSeg" role="radiogroup" aria-label="Floor ribs">
+            <button data-ribs="none" role="radio">None</button>
+            <button data-ribs="long" role="radio">Lengthwise</button>
+            <button data-ribs="cross" role="radio">Cross</button>
+          </div>
+        </div>
+        <div class="field" id="ribHField">
+          <label for="ribH">Rib height <span class="muted" id="ribHReadout"></span> <button class="tip" type="button" data-tip="Taller ribs are much stiffer (stiffness grows with the cube of depth) but take a little space from the bottom."></button></label>
+          <input type="range" id="ribH" min="1.5" max="6" step="0.5" value="3">
+        </div>
+        <div class="field">
+          <label for="gusset">Corner gussets <span class="muted" id="gussetReadout"></span> <button class="tip" type="button" data-tip="A 45° fillet where the floor meets the walls. The cheapest stiffness there is, and screws can't hide in the corners."></button></label>
+          <input type="range" id="gusset" min="0" max="10" step="1" value="0">
+        </div>
+        <label class="check" id="wallRibsRow"><input type="checkbox" id="wallRibs"> Wall ribs <button class="tip" type="button" data-tip="Vertical ribs inside the side and back walls. They stop thin walls bowing or buckling in tall heavy stacks; Lite walls with ribs can beat solid Heavy walls for less plastic. Not available with a wall pattern."></button></label>
       </details>
 
       <details class="sec" open data-sec="inside">
@@ -180,6 +202,10 @@
           <label for="scoop">Scoop <span class="muted" id="scoopReadout"></span> <button class="tip" type="button" data-tip="A 45° ramp inside the front wall, so you can slide small parts out with a finger instead of digging into a corner."></button></label>
           <input type="range" id="scoop" min="0" max="25" step="1" value="0">
         </div>
+        <div class="field" id="trayField">
+          <label for="trayDepth">Tray ledge <span class="muted" id="trayReadout"></span> <button class="tip" type="button" data-tip="Adds a ledge inside the box for a lift-out tray of this depth (make the tray with the Tray part). 0 = no ledge."></button></label>
+          <input type="range" id="trayDepth" min="0" max="60" step="1" value="0">
+        </div>
       </details>
 
       <details class="sec" open data-sec="front">
@@ -187,6 +213,10 @@
         <div class="field" id="frontField">
           <label for="front">Front lip <span class="muted" id="frontReadout"></span> <button class="tip" type="button" data-tip="Height of the hopper's front wall. Lower is easier to reach into; higher holds more and leaves more room for text."></button></label>
           <input type="range" id="front" min="15" max="90" step="5" value="40">
+        </div>
+        <div class="field" id="slopeField">
+          <label for="sideSlope">Side slope <span class="muted" id="slopeReadout"></span> <button class="tip" type="button" data-tip="Cuts the side walls down at an angle from the front lip, so you can reach in from above as well as from the front. Kept to half the depth so a bin stacked on top stays stable."></button></label>
+          <input type="range" id="sideSlope" min="0" max="50" step="5" value="0">
         </div>
         <div class="field">
           <label for="brandIn">Brand <button class="tip" type="button" data-tip="Printed on the front of every bin and on lids. Auto-sized to the space available. Clear it to leave the front plain."></button></label>
@@ -226,6 +256,25 @@
             <button data-pull="notch" role="radio">Finger notch</button>
           </div>
         </div>
+        <div class="field" id="lidStyleField">
+          <label>Lid style <button class="tip" type="button" data-tip="Plain: a solid lid. Window: an opening with a rebate for a clear PET sheet (cut to size, glue or tape it in). Label: a recess for a printed tape label. Dispenser: a hole with a collar for pulling out wire, string or cable ties."></button></label>
+          <div class="seg seg4" id="lidStyleSeg" role="radiogroup" aria-label="Lid style">
+            <button data-lidstyle="plain" role="radio">Plain</button>
+            <button data-lidstyle="window" role="radio">Window</button>
+            <button data-lidstyle="label" role="radio">Label</button>
+            <button data-lidstyle="dispenser" role="radio">Dispenser</button>
+          </div>
+        </div>
+        <div class="field" id="dispField">
+          <label for="dispHole">Dispenser hole <span class="muted" id="dispReadout"></span> <button class="tip" type="button" data-tip="Hole size. About 8 mm for string, 12–15 mm for wire, 20+ mm for cable ties and tape."></button></label>
+          <input type="range" id="dispHole" min="4" max="40" step="1" value="12">
+        </div>
+        <div class="field" id="tapeField">
+          <label>Label size <button class="tip" type="button" data-tip="Height of the recess, to match your label tape (Brother TZe 12/18/24/36 mm) or a paper strip."></button></label>
+          <div class="seg seg4" id="tapeSeg" role="radiogroup" aria-label="Label tape">
+            <button data-tape="12" role="radio">12</button><button data-tape="18" role="radio">18</button><button data-tape="24" role="radio">24</button><button data-tape="36" role="radio">36</button>
+          </div>
+        </div>
         <div class="field" id="lidPatternField">
           <label>Lid pattern <button class="tip" type="button" data-tip="Holes in the lid plate to save filament. Fine for keeping things in; use Solid to keep dust out."></button></label>
           <div class="seg" id="lidPatternSeg" role="radiogroup" aria-label="Lid pattern">
@@ -239,17 +288,73 @@
         </label>
       </details>
 
+      <details class="sec" open data-sec="cups" id="cupsSec">
+        <summary>Cups <span class="muted" id="cupsReadout"></span></summary>
+        <div class="two">
+          <label class="stepfield">Across <button class="tip" type="button" data-tip="Cups side by side (left to right) inside the box."></button><span class="stepper"><button type="button" data-step="cupsX:-1" aria-label="Fewer">−</button><output id="cupsXOut">2</output><button type="button" data-step="cupsX:1" aria-label="More">+</button></span></label>
+          <label class="stepfield">Deep <button class="tip" type="button" data-tip="Rows of cups front to back."></button><span class="stepper"><button type="button" data-step="cupsY:-1" aria-label="Fewer">−</button><output id="cupsYOut">2</output><button type="button" data-step="cupsY:1" aria-label="More">+</button></span></label>
+        </div>
+        <p class="hint">The download is one cup; the plate adds the whole set. Cups are sized from the box above, including its floor ribs and gussets.</p>
+      </details>
+
+      <details class="sec" open data-sec="holder" id="holderSec">
+        <summary>Holder <span class="muted" id="holderReadout"></span></summary>
+        <div class="seg" id="holderSeg" role="radiogroup" aria-label="Holder type">
+          <button data-holder="drill" role="radio">Drill index</button>
+          <button data-holder="hex" role="radio">Hex bits</button>
+          <button data-holder="grid" role="radio">Tool grid</button>
+        </div>
+        <div class="field">
+          <label for="holderH">Deck height <span class="muted" id="holderHReadout"></span> <button class="tip" type="button" data-tip="How high the deck stands above the box floor. Bits and tools stand through the deck and rest on the floor. 0 = automatic. The holder prints upside down (deck on the bed) so it needs no supports."></button></label>
+          <input type="range" id="holderH" min="0" max="120" step="1" value="0">
+        </div>
+        <div class="two" id="gridHoleOpts">
+          <div class="field"><label for="gridHole">Hole <span class="muted" id="gridHoleReadout"></span></label><input type="range" id="gridHole" min="3" max="30" step="0.5" value="8"></div>
+          <div class="field"><label for="gridPitch">Spacing <span class="muted" id="gridPitchReadout"></span></label><input type="range" id="gridPitch" min="6" max="50" step="1" value="14"></div>
+        </div>
+      </details>
+
+      <details class="sec" open data-sec="base" id="baseSec">
+        <summary>Base plate <span class="muted" id="baseReadout"></span></summary>
+        <div class="two">
+          <label class="stepfield">Stacks across <button class="tip" type="button" data-tip="How many stacks stand side by side on this base. The footprint above is one stack."></button><span class="stepper"><button type="button" data-step="baseCols:-1" aria-label="Fewer">−</button><output id="baseColsOut">1</output><button type="button" data-step="baseCols:1" aria-label="More">+</button></span></label>
+          <label class="stepfield">Stacks deep <button class="tip" type="button" data-tip="Rows of stacks front to back."></button><span class="stepper"><button type="button" data-step="baseRows:-1" aria-label="Fewer">−</button><output id="baseRowsOut">1</output><button type="button" data-step="baseRows:1" aria-label="More">+</button></span></label>
+        </div>
+        <div class="field">
+          <label>Underside <button class="tip" type="button" data-tip="Pockets under each corner: rubber feet (10 mm stick-on bumpers) for grip on a counter, or 6 × 2 mm magnets to hold to a steel shelf."></button></label>
+          <div class="seg" id="padsSeg" role="radiogroup" aria-label="Base pockets">
+            <button data-pads="none" role="radio">Flat</button>
+            <button data-pads="rubber" role="radio">Rubber feet</button>
+            <button data-pads="magnet" role="radio">Magnets</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="sec" open data-sec="caddy" id="caddySec">
+        <summary>Caddy <span class="muted" id="caddyReadout"></span></summary>
+        <div class="two">
+          <label class="stepfield">Wells across <span class="stepper"><button type="button" data-step="caddyCols:-1" aria-label="Fewer">−</button><output id="caddyColsOut">4</output><button type="button" data-step="caddyCols:1" aria-label="More">+</button></span></label>
+          <label class="stepfield">Rows <span class="stepper"><button type="button" data-step="caddyRows:-1" aria-label="Fewer">−</button><output id="caddyRowsOut">2</output><button type="button" data-step="caddyRows:1" aria-label="More">+</button></span></label>
+        </div>
+        <div class="field">
+          <label for="caddyH">Handle height <span class="muted" id="caddyHReadout"></span> <button class="tip" type="button" data-tip="Height of the carry handle. Each well takes one 1 × 1 bin of the grid above."></button></label>
+          <input type="range" id="caddyH" min="30" max="150" step="5" value="60">
+        </div>
+      </details>
+
       <div class="stats" aria-live="polite">
         <div data-tip="Filament for this part, from its volume (0% infill, as printed)."><span class="k">Filament</span><span class="v" id="statGrams">—</span></div>
         <div data-tip="Rough Bambu A1 print time at 0.2 mm layers. Your slicer will give the exact time."><span class="k">Time ≈</span><span class="v" id="statTime">—</span></div>
         <div data-tip="Filament cost at your price per kg (set it under ⚙)."><span class="k">Cost</span><span class="v" id="statCost">—</span></div>
         <div data-tip="How many fit on one 256 × 256 mm A1 plate."><span class="k">Per plate</span><span class="v" id="statPlate">—</span></div>
+        <div id="statLoadBox" data-tip="Rough load the floor carries in a stack before it sags about 1 mm (PLA, long-term). Standing on a table, the floor carries anything. Add floor ribs or gussets to raise it."><span class="k">Floor ≈</span><span class="v" id="statLoad">—</span></div>
       </div>
 
       <div class="actions">
         <button class="btn primary" id="dl3mf" type="button" title="Ctrl+S">Download 3MF</button>
         <button class="btn" id="dlStl" type="button">STL</button>
       </div>
+      <p class="hint" id="printHint"></p>
       <div class="actions">
         <button class="btn ghost" id="addPlate" type="button">+ Add to plate</button>
         <button class="btn ghost" id="addLid" type="button">+ Add its lid</button>
@@ -266,6 +371,14 @@
             <option value="starter">Starter set</option>
             <option value="screws">Screw wall (6 hoppers)</option>
             <option value="nuts">Nut organizer (2×2 box, 3×3 grid + lid)</option>
+            <option value="nutcups">Nut cups (2×2 box + 9 cups + lid)</option>
+            <option value="drill">Drill index (box + holder + lid)</option>
+            <option value="bits">Bit case (box + hex holder + lid)</option>
+            <option value="tools">Tall tool bin (box + tool grid)</option>
+            <option value="toolbox">Toolbox (box + tray + lid)</option>
+            <option value="riser">Counter riser set (3 steps)</option>
+            <option value="sorter">Sheet & disc sorter</option>
+            <option value="dispenser">Wire dispenser (box + dispenser lid)</option>
           </select>
           <button class="btn small ghost" id="clearPlate" type="button">Clear</button>
         </div>
@@ -317,6 +430,15 @@
           <option value="1.04">ABS / ASA (1.04 g/cm³)</option>
         </select>
       </div>
+      <h3>Bambu Studio presets</h3>
+      <p>Import once (Bambu Studio → File → Import → Import Configs…), then pick the preset that matches the part's wall. Each one is the stock “0.20mm Standard @BBL A1” with the AESS walls, 0% infill and the seam at the back, away from the branding.</p>
+      <div class="actions">
+        <a class="btn small" href="presets/aess-lite-a1.json" download="AESS Lite - 0.20mm @BBL A1.json">Lite</a>
+        <a class="btn small" href="presets/aess-standard-a1.json" download="AESS Standard - 0.20mm @BBL A1.json">Standard</a>
+        <a class="btn small" href="presets/aess-heavy-a1.json" download="AESS Heavy - 0.20mm @BBL A1.json">Heavy</a>
+      </div>
+      <h3>Install as an app</h3>
+      <p>Use your browser's “Install app” (or “Add to Home Screen”) to keep AESS on this computer or phone. It works without internet after the first visit.</p>
       <div class="dlg-actions"><button class="btn primary">Done</button></div>
     </form>
   </dialog>
